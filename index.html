@@ -1,0 +1,187 @@
+// index.html - Main webpage
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roblox Speed Detection Logs</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <style>
+    .log-entry {
+      transition: background-color 0.3s ease;
+    }
+    .log-entry:hover {
+      background-color: #f3f4f6;
+    }
+    .new-entry {
+      animation: highlight 2s ease-out;
+    }
+    @keyframes highlight {
+      0% { background-color: rgba(239, 68, 68, 0.2); }
+      100% { background-color: transparent; }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div class="container mx-auto px-4 py-8">
+    <header class="mb-8">
+      <h1 class="text-3xl font-bold text-center text-gray-800">Roblox Speed Detection Logs</h1>
+      <p class="text-center text-gray-600">Real-time logs of vehicles exceeding speed limits</p>
+    </header>
+    
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-semibold text-gray-800">Live Logs</h2>
+        <div class="space-x-2">
+          <span id="status-indicator" class="inline-block w-3 h-3 bg-gray-400 rounded-full"></span>
+          <span id="connection-status">Connecting...</span>
+        </div>
+      </div>
+      
+      <div class="border rounded-lg overflow-hidden">
+        <div class="bg-gray-50 p-3 flex font-medium text-sm text-gray-700">
+          <div class="w-1/6">Time</div>
+          <div class="w-1/4">Vehicle</div>
+          <div class="w-1/6">Speed</div>
+          <div class="w-1/4">Excess</div>
+          <div class="w-1/6">Date</div>
+        </div>
+        <div id="logs-container" class="divide-y overflow-auto" style="max-height: 500px;">
+          <!-- Logs will be inserted here -->
+          <div class="text-center text-gray-500 py-12">Waiting for speed detection logs...</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Statistics</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-blue-50 p-4 rounded-lg">
+          <p class="text-blue-500 font-medium">Total Detections</p>
+          <p id="total-detections" class="text-2xl font-bold">0</p>
+        </div>
+        <div class="bg-red-50 p-4 rounded-lg">
+          <p class="text-red-500 font-medium">Highest Speed</p>
+          <p id="highest-speed" class="text-2xl font-bold">0 km/h</p>
+        </div>
+        <div class="bg-green-50 p-4 rounded-lg">
+          <p class="text-green-500 font-medium">Average Excess</p>
+          <p id="average-excess" class="text-2xl font-bold">0 km/h</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Configuration
+    const API_URL = '/.netlify/functions/api'; // Will be our serverless function
+    const POLL_INTERVAL = 3000; // Poll every 3 seconds
+    
+    // State
+    let logs = [];
+    let lastLogId = 0;
+    let stats = {
+      totalDetections: 0,
+      highestSpeed: 0,
+      totalExcess: 0
+    };
+    
+    // DOM Elements
+    const logsContainer = document.getElementById('logs-container');
+    const statusIndicator = document.getElementById('status-indicator');
+    const connectionStatus = document.getElementById('connection-status');
+    const totalDetectionsEl = document.getElementById('total-detections');
+    const highestSpeedEl = document.getElementById('highest-speed');
+    const averageExcessEl = document.getElementById('average-excess');
+    
+    // Format time (HH:MM:SS)
+    function formatTime(date) {
+      return date.toTimeString().split(' ')[0];
+    }
+    
+    // Format date (YYYY-MM-DD)
+    function formatDate(date) {
+      return date.toISOString().split('T')[0];
+    }
+    
+    // Create a log entry element
+    function createLogEntry(log) {
+      const logEntry = document.createElement('div');
+      logEntry.className = 'log-entry flex p-3 text-sm new-entry';
+      
+      const time = new Date(log.timestamp);
+      
+      logEntry.innerHTML = `
+        <div class="w-1/6">${formatTime(time)}</div>
+        <div class="w-1/4">${log.vehicleName}</div>
+        <div class="w-1/6 font-medium">${log.speed} km/h</div>
+        <div class="w-1/4 text-red-600">+${log.excess} km/h</div>
+        <div class="w-1/6">${formatDate(time)}</div>
+      `;
+      
+      return logEntry;
+    }
+    
+    // Update statistics
+    function updateStats() {
+      totalDetectionsEl.textContent = stats.totalDetections;
+      highestSpeedEl.textContent = `${stats.highestSpeed} km/h`;
+      
+      const avgExcess = stats.totalDetections > 0 
+        ? Math.round(stats.totalExcess / stats.totalDetections) 
+        : 0;
+      averageExcessEl.textContent = `${avgExcess} km/h`;
+    }
+    
+    // Fetch the latest logs
+    async function fetchLogs() {
+      try {
+        statusIndicator.className = 'inline-block w-3 h-3 bg-yellow-400 rounded-full';
+        connectionStatus.textContent = 'Fetching...';
+        
+        const response = await fetch(`${API_URL}?since=${lastLogId}`);
+        if (!response.ok) throw new Error('Network response was not ok');
+        
+        const newLogs = await response.json();
+        
+        if (newLogs.length > 0) {
+          // Update last log ID
+          lastLogId = Math.max(...newLogs.map(log => log.id));
+          
+          // Clear the waiting message if it exists
+          if (logsContainer.children.length === 1 && logsContainer.children[0].textContent.includes('Waiting')) {
+            logsContainer.innerHTML = '';
+          }
+          
+          // Add new logs to the top
+          newLogs.reverse().forEach(log => {
+            // Update stats
+            stats.totalDetections++;
+            stats.highestSpeed = Math.max(stats.highestSpeed, log.speed);
+            stats.totalExcess += log.excess;
+            
+            // Add to DOM
+            const logElement = createLogEntry(log);
+            logsContainer.insertBefore(logElement, logsContainer.firstChild);
+          });
+          
+          updateStats();
+        }
+        
+        statusIndicator.className = 'inline-block w-3 h-3 bg-green-400 rounded-full';
+        connectionStatus.textContent = 'Connected';
+      } catch (error) {
+        console.error('Failed to fetch logs:', error);
+        statusIndicator.className = 'inline-block w-3 h-3 bg-red-500 rounded-full';
+        connectionStatus.textContent = 'Connection Error';
+      }
+      
+      // Poll again after interval
+      setTimeout(fetchLogs, POLL_INTERVAL);
+    }
+    
+    // Start polling when the page loads
+    window.addEventListener('load', fetchLogs);
+  </script>
+</body>
+</html>
