@@ -1,0 +1,8 @@
+{
+  "name": "roblox-speed-detector",
+  "version": "1.0.0",
+  "description": "Sistema di rilevazione della velocità per Roblox",
+  "dependencies": {
+    "mongodb": "^4.13.0"
+  }
+}
