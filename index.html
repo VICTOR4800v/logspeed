@@ -1,17 +1,19 @@
-// index.html - Main webpage
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Roblox Speed Detection Logs</title>
+  <title>Sistema di Rilevazione Velocità Roblox</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
   <style>
     .log-entry {
-      transition: background-color 0.3s ease;
+      transition: all 0.3s ease;
     }
     .log-entry:hover {
       background-color: #f3f4f6;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
     .new-entry {
       animation: highlight 2s ease-out;
@@ -20,168 +22,813 @@
       0% { background-color: rgba(239, 68, 68, 0.2); }
       100% { background-color: transparent; }
     }
+    .chart-container {
+      height: 300px;
+      position: relative;
+    }
+    .dark-mode {
+      background-color: #1f2937;
+      color: #f9fafb;
+    }
+    .dark-mode .bg-white {
+      background-color: #374151;
+    }
+    .dark-mode .bg-gray-50 {
+      background-color: #4b5563;
+    }
+    .dark-mode .text-gray-800 {
+      color: #f3f4f6;
+    }
+    .dark-mode .text-gray-700 {
+      color: #e5e7eb;
+    }
+    .dark-mode .text-gray-600 {
+      color: #d1d5db;
+    }
+    .dark-mode .text-gray-500 {
+      color: #9ca3af;
+    }
+    .dark-mode .border {
+      border-color: #4b5563;
+    }
+    .dark-mode .divide-y > * {
+      border-color: #4b5563;
+    }
+    .dark-mode .log-entry:hover {
+      background-color: #4b5563;
+    }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
   <div class="container mx-auto px-4 py-8">
-    <header class="mb-8">
-      <h1 class="text-3xl font-bold text-center text-gray-800">Roblox Speed Detection Logs</h1>
-      <p class="text-center text-gray-600">Real-time logs of vehicles exceeding speed limits</p>
+    <header class="mb-6">
+      <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-800">Sistema di Rilevazione Velocità Roblox</h1>
+        <div class="flex space-x-2">
+          <button id="dark-mode-toggle" class="bg-gray-800 text-white rounded-full p-2">
+            <i class="fas fa-moon"></i>
+          </button>
+          <button id="settings-button" class="bg-blue-500 text-white rounded-full p-2">
+            <i class="fas fa-cog"></i>
+          </button>
+        </div>
+      </div>
+      <p class="text-gray-600">Monitoraggio in tempo reale dei veicoli che superano i limiti di velocità</p>
     </header>
     
-    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+    <!-- Pannello di controllo -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-semibold text-gray-800">Live Logs</h2>
-        <div class="space-x-2">
-          <span id="status-indicator" class="inline-block w-3 h-3 bg-gray-400 rounded-full"></span>
-          <span id="connection-status">Connecting...</span>
+        <h2 class="text-xl font-semibold text-gray-800">Pannello di Controllo</h2>
+        <div class="flex items-center space-x-4">
+          <div class="flex items-center space-x-2">
+            <span id="status-indicator" class="inline-block w-3 h-3 bg-gray-400 rounded-full"></span>
+            <span id="connection-status">Connessione in corso...</span>
+          </div>
+          <button id="refresh-button" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center">
+            <i class="fas fa-sync-alt mr-2"></i> Aggiorna
+          </button>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-blue-50 p-4 rounded-lg">
+          <p class="text-blue-500 font-medium">Rilevazioni Totali</p>
+          <p id="total-detections" class="text-2xl font-bold">0</p>
+          <p class="text-sm text-gray-500">Numero totale di superamenti</p>
+        </div>
+        <div class="bg-red-50 p-4 rounded-lg">
+          <p class="text-red-500 font-medium">Velocità Massima</p>
+          <p id="highest-speed" class="text-2xl font-bold">0 km/h</p>
+          <p class="text-sm text-gray-500">Rilevazione più alta</p>
+        </div>
+        <div class="bg-green-50 p-4 rounded-lg">
+          <p class="text-green-500 font-medium">Eccesso Medio</p>
+          <p id="average-excess" class="text-2xl font-bold">0 km/h</p>
+          <p class="text-sm text-gray-500">Media degli eccessi</p>
+        </div>
+        <div class="bg-yellow-50 p-4 rounded-lg">
+          <p class="text-yellow-500 font-medium">Rilevazioni Oggi</p>
+          <p id="detections-today" class="text-2xl font-bold">0</p>
+          <p class="text-sm text-gray-500">Superamenti delle ultime 24h</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Grafico -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Andamento Rilevazioni</h2>
+      <div class="chart-container">
+        <canvas id="speed-chart"></canvas>
+      </div>
+    </div>
+    
+    <!-- Filtri di ricerca -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Filtri di Ricerca</h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <div>
+          <label for="vehicle-filter" class="block text-sm font-medium text-gray-700 mb-1">Veicolo</label>
+          <input type="text" id="vehicle-filter" placeholder="Filtra per veicolo..." class="w-full px-3 py-2 border rounded-md">
+        </div>
+        <div>
+          <label for="min-speed" class="block text-sm font-medium text-gray-700 mb-1">Velocità Minima</label>
+          <input type="number" id="min-speed" placeholder="Km/h" class="w-full px-3 py-2 border rounded-md">
+        </div>
+        <div>
+          <label for="max-speed" class="block text-sm font-medium text-gray-700 mb-1">Velocità Massima</label>
+          <input type="number" id="max-speed" placeholder="Km/h" class="w-full px-3 py-2 border rounded-md">
+        </div>
+        <div>
+          <label for="date-filter" class="block text-sm font-medium text-gray-700 mb-1">Data</label>
+          <input type="date" id="date-filter" class="w-full px-3 py-2 border rounded-md">
+        </div>
+      </div>
+      
+      <div class="flex justify-end">
+        <button id="apply-filters" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md mr-2">
+          Applica Filtri
+        </button>
+        <button id="reset-filters" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md">
+          Reimposta
+        </button>
+      </div>
+    </div>
+    
+    <!-- Tabella dei log -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-semibold text-gray-800">Log Rilevazioni</h2>
+        <div class="flex items-center space-x-2">
+          <span class="text-sm text-gray-500" id="filtered-count">Mostra tutti i risultati</span>
+          <select id="logs-per-page" class="border rounded-md px-2 py-1">
+            <option value="10">10 per pagina</option>
+            <option value="25">25 per pagina</option>
+            <option value="50">50 per pagina</option>
+            <option value="100">100 per pagina</option>
+          </select>
+          <button id="export-csv" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md flex items-center">
+            <i class="fas fa-download mr-1"></i> CSV
+          </button>
         </div>
       </div>
       
       <div class="border rounded-lg overflow-hidden">
         <div class="bg-gray-50 p-3 flex font-medium text-sm text-gray-700">
-          <div class="w-1/6">Time</div>
-          <div class="w-1/4">Vehicle</div>
-          <div class="w-1/6">Speed</div>
-          <div class="w-1/4">Excess</div>
-          <div class="w-1/6">Date</div>
+          <div class="w-1/12">#</div>
+          <div class="w-1/6">Ora</div>
+          <div class="w-1/4">Veicolo</div>
+          <div class="w-1/6">Velocità</div>
+          <div class="w-1/6">Eccesso</div>
+          <div class="w-1/6">Data</div>
+          <div class="w-1/12">Azioni</div>
         </div>
-        <div id="logs-container" class="divide-y overflow-auto" style="max-height: 500px;">
-          <!-- Logs will be inserted here -->
-          <div class="text-center text-gray-500 py-12">Waiting for speed detection logs...</div>
+        <div id="logs-container" class="divide-y overflow-auto" style="max-height: 500px; min-height: 300px;">
+          <!-- I log verranno inseriti qui -->
+          <div class="text-center text-gray-500 py-12">In attesa di rilevazioni...</div>
+        </div>
+      </div>
+      
+      <!-- Paginazione -->
+      <div class="flex justify-between items-center mt-4">
+        <span class="text-sm text-gray-500" id="showing-entries">Mostra 0-0 di 0 risultati</span>
+        <div class="flex space-x-1">
+          <button id="prev-page" class="px-3 py-1 border rounded-md disabled:opacity-50">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <div id="pagination-numbers" class="flex space-x-1">
+            <!--             <!-- I numeri di pagina verranno inseriti qui -->
+          </div>
+          <button id="next-page" class="px-3 py-1 border rounded-md disabled:opacity-50">
+            <i class="fas fa-chevron-right"></i>
+          </button>
         </div>
       </div>
     </div>
     
-    <div class="bg-white rounded-lg shadow-md p-6">
-      <h2 class="text-xl font-semibold text-gray-800 mb-4">Statistics</h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-blue-50 p-4 rounded-lg">
-          <p class="text-blue-500 font-medium">Total Detections</p>
-          <p id="total-detections" class="text-2xl font-bold">0</p>
+    <!-- Sezione Impostazioni (Modale) -->
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-semibold text-gray-800">Impostazioni</h3>
+          <button id="close-settings" class="text-gray-500 hover:text-gray-700">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
-        <div class="bg-red-50 p-4 rounded-lg">
-          <p class="text-red-500 font-medium">Highest Speed</p>
-          <p id="highest-speed" class="text-2xl font-bold">0 km/h</p>
+        
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Intervallo di Aggiornamento</label>
+            <select id="poll-interval" class="w-full px-3 py-2 border rounded-md">
+              <option value="1000">1 secondo</option>
+              <option value="3000" selected>3 secondi</option>
+              <option value="5000">5 secondi</option>
+              <option value="10000">10 secondi</option>
+              <option value="30000">30 secondi</option>
+            </select>
+          </div>
+          
+          <div>
+            <label class="flex items-center space-x-2">
+              <input type="checkbox" id="enable-sound" class="rounded">
+              <span class="text-sm font-medium text-gray-700">Attiva notifiche sonore</span>
+            </label>
+          </div>
+          
+          <div>
+            <label class="flex items-center space-x-2">
+              <input type="checkbox" id="auto-scroll" class="rounded" checked>
+              <span class="text-sm font-medium text-gray-700">Scorri automaticamente ai nuovi log</span>
+            </label>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Limite minimo di visualizzazione</label>
+            <div class="flex items-center space-x-2">
+              <input type="range" id="min-display-speed" min="0" max="200" value="80" class="w-full">
+              <span id="min-display-speed-value">80 km/h</span>
+            </div>
+          </div>
         </div>
-        <div class="bg-green-50 p-4 rounded-lg">
-          <p class="text-green-500 font-medium">Average Excess</p>
-          <p id="average-excess" class="text-2xl font-bold">0 km/h</p>
+        
+        <div class="mt-6 flex justify-end space-x-2">
+          <button id="reset-settings" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md">
+            Reimposta Default
+          </button>
+          <button id="save-settings" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md">
+            Salva Impostazioni
+          </button>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Script -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chart.js/3.7.0/chart.min.js"></script>
   <script>
-    // Configuration
-    const API_URL = '/.netlify/functions/api'; // Will be our serverless function
-    const POLL_INTERVAL = 3000; // Poll every 3 seconds
+    // Configurazione
+    const API_URL = '/.netlify/functions/api';
+    let POLL_INTERVAL = 3000; // Predefinito: 3 secondi
     
-    // State
+    // Stato
     let logs = [];
+    let filteredLogs = [];
     let lastLogId = 0;
-    let stats = {
+    let currentPage = 1;
+    let logsPerPage = 10;
+    let statsData = {
       totalDetections: 0,
       highestSpeed: 0,
-      totalExcess: 0
+      totalExcess: 0,
+      detectionsToday: 0
+    };
+    let filterSettings = {
+      vehicle: '',
+      minSpeed: '',
+      maxSpeed: '',
+      date: ''
+    };
+    let appSettings = {
+      pollInterval: 3000,
+      enableSound: false,
+      autoScroll: true,
+      minDisplaySpeed: 80
+    };
+    let chartInstance = null;
+    let speedData = {
+      labels: [],
+      speeds: []
     };
     
-    // DOM Elements
+    // Elementi DOM
     const logsContainer = document.getElementById('logs-container');
     const statusIndicator = document.getElementById('status-indicator');
     const connectionStatus = document.getElementById('connection-status');
     const totalDetectionsEl = document.getElementById('total-detections');
     const highestSpeedEl = document.getElementById('highest-speed');
     const averageExcessEl = document.getElementById('average-excess');
+    const detectionsToday = document.getElementById('detections-today');
+    const showingEntries = document.getElementById('showing-entries');
+    const filteredCount = document.getElementById('filtered-count');
+    const paginationNumbers = document.getElementById('pagination-numbers');
+    const prevPageBtn = document.getElementById('prev-page');
+    const nextPageBtn = document.getElementById('next-page');
     
-    // Format time (HH:MM:SS)
+    // Elementi filtri
+    const vehicleFilter = document.getElementById('vehicle-filter');
+    const minSpeedFilter = document.getElementById('min-speed');
+    const maxSpeedFilter = document.getElementById('max-speed');
+    const dateFilter = document.getElementById('date-filter');
+    const applyFiltersBtn = document.getElementById('apply-filters');
+    const resetFiltersBtn = document.getElementById('reset-filters');
+    
+    // Elementi impostazioni
+    const settingsModal = document.getElementById('settings-modal');
+    const settingsButton = document.getElementById('settings-button');
+    const closeSettings = document.getElementById('close-settings');
+    const pollIntervalSelect = document.getElementById('poll-interval');
+    const enableSoundCheckbox = document.getElementById('enable-sound');
+    const autoScrollCheckbox = document.getElementById('auto-scroll');
+    const minDisplaySpeedSlider = document.getElementById('min-display-speed');
+    const minDisplaySpeedValue = document.getElementById('min-display-speed-value');
+    const saveSettingsBtn = document.getElementById('save-settings');
+    const resetSettingsBtn = document.getElementById('reset-settings');
+    
+    // Altri elementi
+    const refreshButton = document.getElementById('refresh-button');
+    const exportCsvBtn = document.getElementById('export-csv');
+    const logsPerPageSelect = document.getElementById('logs-per-page');
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+    
+    // Funzioni di utilità
     function formatTime(date) {
       return date.toTimeString().split(' ')[0];
     }
     
-    // Format date (YYYY-MM-DD)
     function formatDate(date) {
       return date.toISOString().split('T')[0];
     }
     
-    // Create a log entry element
-    function createLogEntry(log) {
+    function isToday(dateStr) {
+      const today = new Date();
+      const date = new Date(dateStr);
+      return date.getDate() === today.getDate() &&
+             date.getMonth() === today.getMonth() &&
+             date.getFullYear() === today.getFullYear();
+    }
+    
+    // Crea un elemento di log
+    function createLogEntry(log, index) {
       const logEntry = document.createElement('div');
-      logEntry.className = 'log-entry flex p-3 text-sm new-entry';
+      logEntry.className = 'log-entry flex p-3 text-sm items-center' + (log.isNew ? ' new-entry' : '');
+      logEntry.dataset.id = log.id;
       
       const time = new Date(log.timestamp);
       
       logEntry.innerHTML = `
+        <div class="w-1/12">${index}</div>
         <div class="w-1/6">${formatTime(time)}</div>
         <div class="w-1/4">${log.vehicleName}</div>
         <div class="w-1/6 font-medium">${log.speed} km/h</div>
-        <div class="w-1/4 text-red-600">+${log.excess} km/h</div>
+        <div class="w-1/6 text-red-600">+${log.excess} km/h</div>
         <div class="w-1/6">${formatDate(time)}</div>
+        <div class="w-1/12">
+          <button class="text-gray-500 hover:text-gray-700 detail-btn" data-id="${log.id}">
+            <i class="fas fa-info-circle"></i>
+          </button>
+        </div>
       `;
       
       return logEntry;
     }
     
-    // Update statistics
+    // Aggiorna le statistiche
     function updateStats() {
-      totalDetectionsEl.textContent = stats.totalDetections;
-      highestSpeedEl.textContent = `${stats.highestSpeed} km/h`;
+      totalDetectionsEl.textContent = statsData.totalDetections;
+      highestSpeedEl.textContent = `${statsData.highestSpeed} km/h`;
       
-      const avgExcess = stats.totalDetections > 0 
-        ? Math.round(stats.totalExcess / stats.totalDetections) 
+      const avgExcess = statsData.totalDetections > 0 
+        ? Math.round(statsData.totalExcess / statsData.totalDetections) 
         : 0;
       averageExcessEl.textContent = `${avgExcess} km/h`;
+      detectionsToday.textContent = statsData.detectionsToday;
     }
     
-    // Fetch the latest logs
+    // Aggiorna il grafico
+    function updateChart() {
+      if (chartInstance) {
+        chartInstance.data.labels = speedData.labels;
+        chartInstance.data.datasets[0].data = speedData.speeds;
+        chartInstance.update();
+      } else {
+        const ctx = document.getElementById('speed-chart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: speedData.labels,
+            datasets: [{
+              label: 'Velocità (km/h)',
+              data: speedData.speeds,
+              borderColor: 'rgb(59, 130, 246)',
+              backgroundColor: 'rgba(59, 130, 246, 0.2)',
+              borderWidth: 2,
+              tension: 0.1,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: 'Velocità (km/h)'
+                }
+              },
+              x: {
+                title: {
+                  display: true,
+                  text: 'Ora rilevazione'
+                }
+              }
+            }
+          }
+        });
+      }
+    }
+    
+    // Funzione per riprodurre il suono di notifica
+    function playNotificationSound() {
+      if (appSettings.enableSound) {
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLHPM+N2QUBUQSqDo0LGFYzAPRIHRso5nNw4hJ2mVvcHUp4FTGQkoSoTHybDEonxFBAkmPXfE3trQrIZFAwAGDzFFcLTl7tivfUEpBTI3V57i/97BeGMdBRoVMXLO//7Tm5JtKBUSKljFvenXvaeCNg0PHDRwp+b15bWbbRwMCjlp0/Hp3salmE4TCR1JgL7MvLGokGg0DBpMjKifc2l2qcDa6/DZ0auZkWlRODFAfLf1/v7juKaYcVInKVya4+rm6NLGmndILThccsHP093Z3N7OtoFNMzRUc6fO1N/t8evs6cWkdVE0PF6Lp8PMzOLx9OzHk3lXMjFPcJqxuLW9ydfo8r5uSC0yWH2dsK6urrrP3NuDYjskK1GHora3uMPFzNfEaDwcIk6In621ur7EytHJaiYUHkyFpby+wcLH0MWZTxkSHkqBoLK2uL/FyLxwPhwaKFOHo7u9wMTRwYxVJhkdL1qLpLa5wcjVu4BLHjRKXn+bp6qtvMt');
+        audio.play();
+      }
+    }
+    
+    // Filtra i log in base ai criteri specificati
+    function applyFilters() {
+      filterSettings.vehicle = vehicleFilter.value.toLowerCase();
+      filterSettings.minSpeed = parseInt(minSpeedFilter.value) || '';
+      filterSettings.maxSpeed = parseInt(maxSpeedFilter.value) || '';
+      filterSettings.date = dateFilter.value;
+      
+      filteredLogs = logs.filter(log => {
+        // Filtro veicolo
+        if (filterSettings.vehicle && !log.vehicleName.toLowerCase().includes(filterSettings.vehicle)) {
+          return false;
+        }
+        
+        // Filtro velocità minima
+        if (filterSettings.minSpeed !== '' && log.speed < filterSettings.minSpeed) {
+          return false;
+        }
+        
+        // Filtro velocità massima
+        if (filterSettings.maxSpeed !== '' && log.speed > filterSettings.maxSpeed) {
+          return false;
+        }
+        
+        // Filtro data
+        if (filterSettings.date && formatDate(new Date(log.timestamp)) !== filterSettings.date) {
+          return false;
+        }
+        
+        return true;
+      });
+      
+      currentPage = 1;
+      renderLogs();
+    }
+    
+    // Reset dei filtri
+    function resetFilters() {
+      vehicleFilter.value = '';
+      minSpeedFilter.value = '';
+      maxSpeedFilter.value = '';
+      dateFilter.value = '';
+      
+      filterSettings.vehicle = '';
+      filterSettings.minSpeed = '';
+      filterSettings.maxSpeed = '';
+      filterSettings.date = '';
+      
+      filteredLogs = [...logs];
+      currentPage = 1;
+      renderLogs();
+    }
+    
+    // Esporta i log in formato CSV
+    function exportToCsv() {
+      const headers = ['ID', 'Data', 'Ora', 'Veicolo', 'Velocità (km/h)', 'Eccesso (km/h)'];
+      
+      const csvContent = [
+        headers.join(','),
+        ...filteredLogs.map(log => {
+          const date = new Date(log.timestamp);
+          return [
+            log.id,
+            formatDate(date),
+            formatTime(date),
+            `"${log.vehicleName}"`,
+            log.speed,
+            log.excess
+          ].join(',');
+        })
+      ].join('\n');
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `rilevazioni-velocita-${formatDate(new Date())}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    
+    // Aggiorna la paginazione
+    function updatePagination() {
+      const totalPages = Math.ceil(filteredLogs.length / logsPerPage);
+      
+      // Aggiorna i pulsanti prev/next
+      prevPageBtn.disabled = currentPage === 1;
+      nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+      
+      // Aggiorna l'indicatore di pagine
+      paginationNumbers.innerHTML = '';
+      
+      let startPage = Math.max(1, currentPage - 2);
+      let endPage = Math.min(totalPages, startPage + 4);
+      
+      if (endPage - startPage < 4) {
+        startPage = Math.max(1, endPage - 4);
+      }
+      
+      if (startPage > 1) {
+        const btn = document.createElement('button');
+        btn.className = 'px-3 py-1 border rounded-md';
+        btn.textContent = '1';
+        btn.addEventListener('click', () => {
+          currentPage = 1;
+          renderLogs();
+        });
+        paginationNumbers.appendChild(btn);
+        
+        if (startPage > 2) {
+          const ellipsis = document.createElement('span');
+          ellipsis.className = 'px-3 py-1';
+          ellipsis.textContent = '...';
+          paginationNumbers.appendChild(ellipsis);
+        }
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        const btn = document.createElement('button');
+        btn.className = `px-3 py-1 border rounded-md ${i === currentPage ? 'bg-blue-500 text-white' : ''}`;
+        btn.textContent = i;
+        btn.addEventListener('click', () => {
+          currentPage = i;
+          renderLogs();
+        });
+        paginationNumbers.appendChild(btn);
+      }
+      
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          const ellipsis = document.createElement('span');
+          ellipsis.className = 'px-3 py-1';
+          ellipsis.textContent = '...';
+          paginationNumbers.appendChild(ellipsis);
+        }
+        
+        const btn = document.createElement('button');
+        btn.className = 'px-3 py-1 border rounded-md';
+        btn.textContent = totalPages;
+        btn.addEventListener('click', () => {
+          currentPage = totalPages;
+          renderLogs();
+        });
+        paginationNumbers.appendChild(btn);
+      }
+      
+      // Aggiorna l'indicatore di risultati
+      const start = filteredLogs.length > 0 ? (currentPage - 1) * logsPerPage + 1 : 0;
+      const end = Math.min(currentPage * logsPerPage, filteredLogs.length);
+      showingEntries.textContent = `Mostra ${start}-${end} di ${filteredLogs.length} risultati`;
+      
+      if (filteredLogs.length < logs.length) {
+        filteredCount.textContent = `Filtrati: ${filteredLogs.length} di ${logs.length} totali`;
+      } else {
+        filteredCount.textContent = `Mostra tutti i risultati (${logs.length})`;
+      }
+    }
+    
+    // Renderizza i log nella tabella
+    function renderLogs() {
+      if (filteredLogs.length === 0) {
+        logsContainer.innerHTML = '<div class="text-center text-gray-500 py-12">Nessun risultato trovato</div>';
+      } else {
+        logsContainer.innerHTML = '';
+        
+        const startIndex = (currentPage - 1) * logsPerPage;
+        const endIndex = Math.min(startIndex + logsPerPage, filteredLogs.length);
+        
+        for (let i = startIndex; i < endIndex; i++) {
+          const logElement = createLogEntry(filteredLogs[i], i + 1);
+          logsContainer.appendChild(logElement);
+        }
+      }
+      
+      updatePagination();
+    }
+    
+    // Salva le impostazioni
+    function saveSettings() {
+      appSettings.pollInterval = parseInt(pollIntervalSelect.value);
+      appSettings.enableSound = enableSoundCheckbox.checked;
+      appSettings.autoScroll = autoScrollCheckbox.checked;
+      appSettings.minDisplaySpeed = parseInt(minDisplaySpeedSlider.value);
+      
+      POLL_INTERVAL = appSettings.pollInterval;
+      
+      localStorage.setItem('speedDetectionSettings', JSON.stringify(appSettings));
+      
+      settingsModal.classList.add('hidden');
+    }
+    
+    // Reimposta le impostazioni ai valori predefiniti
+    function resetSettings() {
+      appSettings = {
+        pollInterval: 3000,
+        enableSound: false,
+        autoScroll: true,
+        minDisplaySpeed: 80
+      };
+      
+      pollIntervalSelect.value = appSettings.pollInterval;
+      enableSoundCheckbox.checked = appSettings.enableSound;
+      autoScrollCheckbox.checked = appSettings.autoScroll;
+      minDisplaySpeedSlider.value = appSettings.minDisplaySpeed;
+      minDisplaySpeedValue.textContent = `${appSettings.minDisplaySpeed} km/h`;
+      
+      POLL_INTERVAL = appSettings.pollInterval;
+    }
+    
+    // Attiva/disattiva la modalità scura
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+      
+      if (document.body.classList.contains('dark-mode')) {
+        darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+      } else {
+        darkModeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+      }
+    }
+    
+    // Fetch dei log
     async function fetchLogs() {
       try {
         statusIndicator.className = 'inline-block w-3 h-3 bg-yellow-400 rounded-full';
-        connectionStatus.textContent = 'Fetching...';
+        connectionStatus.textContent = 'Recupero dati...';
         
         const response = await fetch(`${API_URL}?since=${lastLogId}`);
-        if (!response.ok) throw new Error('Network response was not ok');
+        if (!response.ok) throw new Error('Errore di rete');
         
         const newLogs = await response.json();
         
         if (newLogs.length > 0) {
-          // Update last log ID
+          // Aggiorna l'ultimo ID log
           lastLogId = Math.max(...newLogs.map(log => log.id));
           
-          // Clear the waiting message if it exists
-          if (logsContainer.children.length === 1 && logsContainer.children[0].textContent.includes('Waiting')) {
-            logsContainer.innerHTML = '';
-          }
-          
-          // Add new logs to the top
-          newLogs.reverse().forEach(log => {
-            // Update stats
-            stats.totalDetections++;
-            stats.highestSpeed = Math.max(stats.highestSpeed, log.speed);
-            stats.totalExcess += log.excess;
+          // Marca i nuovi log
+          newLogs.forEach(log => {
+            log.isNew = true;
             
-            // Add to DOM
-            const logElement = createLogEntry(log);
-            logsContainer.insertBefore(logElement, logsContainer.firstChild);
+            // Aggiorna le statistiche
+            statsData.totalDetections++;
+            statsData.highestSpeed = Math.max(statsData.highestSpeed, log.speed);
+            statsData.totalExcess += log.excess;
+            
+            if (isToday(log.timestamp)) {
+              statsData.detectionsToday++;
+            }
+            
+            // Aggiorna i dati del grafico
+            const time = new Date(log.timestamp);
+            speedData.labels.push(formatTime(time));
+            speedData.speeds.push(log.speed);
+            
+            // Limita i dati del grafico a 20 punti
+            if (speedData.labels.length > 20) {
+              speedData.labels.shift();
+              speedData.speeds.shift();
+            }
+            
+            // Riproduce il suono di notifica
+            playNotificationSound();
           });
           
+          // Aggiungi i nuovi log all'inizio dell'array
+          logs = [...newLogs, ...logs];
+          
+          // Riapplica i filtri
+          applyFilters();
+          
+          // Aggiorna il grafico
+          updateChart();
+          
+          // Aggiorna le statistiche
           updateStats();
         }
         
         statusIndicator.className = 'inline-block w-3 h-3 bg-green-400 rounded-full';
-        connectionStatus.textContent = 'Connected';
+        connectionStatus.textContent = 'Connesso';
       } catch (error) {
-        console.error('Failed to fetch logs:', error);
+        console.error('Errore nel recupero dei log:', error);
         statusIndicator.className = 'inline-block w-3 h-3 bg-red-500 rounded-full';
-        connectionStatus.textContent = 'Connection Error';
+        connectionStatus.textContent = 'Errore di connessione';
       }
       
-      // Poll again after interval
+      // Richiedi nuovamente dopo l'intervallo
       setTimeout(fetchLogs, POLL_INTERVAL);
     }
     
-    // Start polling when the page loads
-    window.addEventListener('load', fetchLogs);
+    // Event listeners
+    applyFiltersBtn.addEventListener('click', applyFilters);
+    resetFiltersBtn.addEventListener('click', resetFilters);
+    prevPageBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderLogs();
+      }
+    });
+    nextPageBtn.addEventListener('click', () => {
+      const totalPages = Math.ceil(filteredLogs.length / logsPerPage);
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderLogs();
+      }
+    });
+    
+    logsPerPageSelect.addEventListener('change', () => {
+      logsPerPage = parseInt(logsPerPageSelect.value);
+      currentPage = 1;
+      renderLogs();
+    });
+    
+    exportCsvBtn.addEventListener('click', exportToCsv);
+    refreshButton.addEventListener('click', () => {
+      fetchLogs();
+    });
+    
+    settingsButton.addEventListener('click', () => {
+      settingsModal.classList.remove('hidden');
+    });
+    
+    closeSettings.addEventListener('click', () => {
+      settingsModal.classList.add('hidden');
+    });
+    
+    saveSettingsBtn.addEventListener('click', saveSettings);
+    resetSettingsBtn.addEventListener('click', resetSettings);
+    
+    darkModeToggle.addEventListener('click', toggleDarkMode);
+    
+    minDisplaySpeedSlider.addEventListener('input', () => {
+      minDisplaySpeedValue.textContent = `${minDisplaySpeedSlider.value} km/h`;
+    });
+    
+    // Event delegation per i dettagli dei log
+    logsContainer.addEventListener('click', (e) => {
+      if (e.target.closest('.detail-btn')) {
+        const id = parseInt(e.target.closest('.detail-btn').dataset.id);
+        const log = logs.find(l => l.id === id);
+        
+        if (log) {
+          alert(`Dettagli Rilevazione #${log.id}:
+Veicolo: ${log.vehicleName}
+Velocità: ${log.speed} km/h
+Eccesso: +${log.excess} km/h
+Data e ora: ${new Date(log.timestamp).toLocaleString()}`);
+        }
+      }
+    });
+    
+    // Carica le impostazioni salvate
+    function loadSettings() {
+      const savedSettings = localStorage.getItem('speedDetectionSettings');
+      
+      if (savedSettings) {
+        appSettings = JSON.parse(savedSettings);
+        
+        pollIntervalSelect.value = appSettings.pollInterval;
+        enableSoundCheckbox.checked = appSettings.enableSound;
+        autoScrollCheckbox.checked = appSettings.autoScroll;
+        minDisplaySpeedSlider.value = appSettings.minDisplaySpeed;
+        minDisplaySpeedValue.textContent = `${appSettings.minDisplaySpeed} km/h`;
+        
+        POLL_INTERVAL = appSettings.pollInterval;
+      }
+      
+      // Carica l'impostazione della modalità scura
+      if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark-mode');
+        darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+      }
+    }
+    
+    // Inizializzazione
+    window.addEventListener('load', () => {
+      loadSettings();
+      fetchLogs();
+      filteredLogs = [...logs];
+      updateChart();
+    });
   </script>
 </body>
 </html>
