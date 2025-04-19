@@ -60,6 +60,132 @@
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
+  <!-- Login Modal -->
+<div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-semibold text-gray-800">Accesso Sistema</h3>
+    </div>
+    
+    <div id="login-error" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"></div>
+    
+    <div class="space-y-4 mb-6">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1" for="username">Username</label>
+        <input type="text" id="username" class="w-full px-3 py-2 border rounded-md" placeholder="Inserisci username">
+      </div>
+      
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1" for="password">Password</label>
+        <input type="password" id="password" class="w-full px-3 py-2 border rounded-md" placeholder="Inserisci password">
+      </div>
+    </div>
+    
+    <div class="flex justify-end space-x-2">
+      <button id="login-button" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md">
+        Accedi
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Actions Modal -->
+<div id="admin-actions-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-semibold text-gray-800">Pannello Amministratore</h3>
+      <button id="close-admin-modal" class="text-gray-500 hover:text-gray-700">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="space-y-4 mb-6">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Elimina Dati</label>
+        <div class="flex items-center gap-2">
+          <select id="delete-option" class="w-full px-3 py-2 border rounded-md">
+            <option value="all">Tutti i dati</option>
+            <option value="older-than-month">Dati più vecchi di un mese</option>
+            <option value="older-than-week">Dati più vecchi di una settimana</option>
+            <option value="by-date">Dati per data specifica</option>
+          </select>
+          <input type="date" id="delete-date" class="w-full px-3 py-2 border rounded-md hidden">
+        </div>
+      </div>
+      
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Backup Dati</label>
+        <button id="backup-data" class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md">
+          Esporta Backup
+        </button>
+      </div>
+      
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Gestione Utenti</label>
+        <button id="manage-users" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md">
+          Gestisci Utenti
+        </button>
+      </div>
+    </div>
+    
+    <div class="border-t pt-4">
+      <button id="execute-admin-action" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md">
+        Esegui Azione
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Manage Users Modal -->
+<div id="manage-users-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg p-6 max-w-xl w-full">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-semibold text-gray-800">Gestione Utenti</h3>
+      <button id="close-users-modal" class="text-gray-500 hover:text-gray-700">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="space-y-4 mb-6">
+      <div>
+        <h4 class="font-medium text-gray-700 mb-2">Utenti Registrati</h4>
+        <div id="users-list" class="border rounded-md max-h-64 overflow-y-auto divide-y">
+          <!-- Gli utenti verranno inseriti qui -->
+        </div>
+      </div>
+      
+      <div class="border-t pt-4">
+        <h4 class="font-medium text-gray-700 mb-2">Aggiungi Nuovo Utente</h4>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1" for="new-username">Username</label>
+            <input type="text" id="new-username" class="w-full px-3 py-2 border rounded-md">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1" for="new-password">Password</label>
+            <input type="password" id="new-password" class="w-full px-3 py-2 border rounded-md">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1" for="new-role">Ruolo</label>
+            <select id="new-role" class="w-full px-3 py-2 border rounded-md">
+              <option value="user">Utente Base</option>
+              <option value="admin">Amministratore</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="flex justify-between pt-4">
+      <button id="add-user" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md">
+        Aggiungi Utente
+      </button>
+      <button id="save-users" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md">
+        Salva Modifiche
+      </button>
+    </div>
+  </div>
+</div>
   <div class="container mx-auto px-4 py-8">
     <header class="mb-6">
       <div class="flex justify-between items-center">
@@ -270,6 +396,540 @@
     // Configurazione
     const API_URL = '/.netlify/functions/api';
     let POLL_INTERVAL = 3000; // Predefinito: 3 secondi
+    // Aggiungi queste variabili all'inizio dello script
+let currentUser = null;
+let isAdmin = false;
+let users = [];
+
+// Funzioni per il sistema di autenticazione
+function initAuth() {
+  // Carica gli utenti dal localStorage o crea un utente admin predefinito
+  const storedUsers = localStorage.getItem('speedSystemUsers');
+  if (storedUsers) {
+    users = JSON.parse(storedUsers);
+  } else {
+    // Crea un utente admin predefinito se non esistono utenti
+    users = [
+      {
+        username: 'admin',
+        password: 'admin123', // In produzione usare una password più sicura
+        role: 'admin'
+      },
+      {
+        username: 'user',
+        password: 'user123',
+        role: 'user'
+      }
+    ];
+    localStorage.setItem('speedSystemUsers', JSON.stringify(users));
+  }
+
+  // Controlla se l'utente è già loggato
+  const loggedInUser = sessionStorage.getItem('currentUser');
+  if (loggedInUser) {
+    currentUser = JSON.parse(loggedInUser);
+    isAdmin = currentUser.role === 'admin';
+    showLoggedInUI();
+  } else {
+    // Mostra il modale di login
+    document.getElementById('login-modal').classList.remove('hidden');
+  }
+}
+
+// Login
+function login(username, password) {
+  const user = users.find(u => u.username === username && u.password === password);
+  if (user) {
+    currentUser = {
+      username: user.username,
+      role: user.role
+    };
+    isAdmin = user.role === 'admin';
+    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+    document.getElementById('login-modal').classList.add('hidden');
+    
+    showLoggedInUI();
+    return true;
+  } else {
+    document.getElementById('login-error').classList.remove('hidden');
+    document.getElementById('login-error').textContent = 'Username o password non validi';
+    return false;
+  }
+}
+
+// Logout
+function logout() {
+  currentUser = null;
+  isAdmin = false;
+  sessionStorage.removeItem('currentUser');
+  document.getElementById('login-modal').classList.remove('hidden');
+  hideLoggedInUI();
+}
+
+// Mostra UI dopo il login
+function showLoggedInUI() {
+  // Aggiungi un elemento per mostrare l'utente corrente e il pulsante di logout
+  const header = document.querySelector('header');
+  
+  // Crea elemento per utente se non esiste
+  if (!document.getElementById('user-info')) {
+    const userInfoDiv = document.createElement('div');
+    userInfoDiv.id = 'user-info';
+    userInfoDiv.className = 'flex items-center mt-4 justify-between';
+    
+    const userSpan = document.createElement('span');
+    userSpan.className = 'text-sm text-gray-700';
+    userSpan.textContent = `Accesso effettuato come: ${currentUser.username} (${currentUser.role === 'admin' ? 'Amministratore' : 'Utente'})`;
+    
+    const buttonsDiv = document.createElement('div');
+    buttonsDiv.className = 'flex space-x-2';
+    
+    if (isAdmin) {
+      const adminButton = document.createElement('button');
+      adminButton.id = 'admin-panel-button';
+      adminButton.className = 'bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm';
+      adminButton.innerHTML = '<i class="fas fa-shield-alt mr-1"></i> Pannello Admin';
+      adminButton.addEventListener('click', () => {
+        document.getElementById('admin-actions-modal').classList.remove('hidden');
+      });
+      buttonsDiv.appendChild(adminButton);
+    }
+    
+    const logoutButton = document.createElement('button');
+    logoutButton.id = 'logout-button';
+    logoutButton.className = 'bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md text-sm';
+    logoutButton.innerHTML = '<i class="fas fa-sign-out-alt mr-1"></i> Logout';
+    logoutButton.addEventListener('click', logout);
+    
+    buttonsDiv.appendChild(logoutButton);
+    userInfoDiv.appendChild(userSpan);
+    userInfoDiv.appendChild(buttonsDiv);
+    
+    header.appendChild(userInfoDiv);
+  }
+}
+
+// Nascondi UI utente dopo logout
+function hideLoggedInUI() {
+  const userInfo = document.getElementById('user-info');
+  if (userInfo) {
+    userInfo.remove();
+  }
+}
+
+// Gestione utenti
+function renderUsersList() {
+  const usersList = document.getElementById('users-list');
+  usersList.innerHTML = '';
+  
+  users.forEach((user, index) => {
+    const userRow = document.createElement('div');
+    userRow.className = 'p-3 flex justify-between items-center';
+    userRow.innerHTML = `
+      <div>
+        <span class="font-medium">${user.username}</span>
+        <span class="ml-2 text-xs ${user.role === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'} px-2 py-1 rounded">
+          ${user.role === 'admin' ? 'Admin' : 'Utente'}
+        </span>
+      </div>
+      <div class="flex space-x-2">
+        <button class="edit-user-btn text-blue-500 hover:text-blue-700" data-index="${index}">
+          <i class="fas fa-edit"></i>
+        </button>
+        <button class="delete-user-btn text-red-500 hover:text-red-700" data-index="${index}">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    `;
+    usersList.appendChild(userRow);
+  });
+  
+  // Aggiungi event listeners ai pulsanti
+  document.querySelectorAll('.edit-user-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const index = e.currentTarget.dataset.index;
+      // Implementare l'editing dell'utente
+      alert(`Modifica utente: ${users[index].username}`);
+    });
+  });
+  
+  document.querySelectorAll('.delete-user-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const index = e.currentTarget.dataset.index;
+      if (confirm(`Sei sicuro di voler eliminare l'utente ${users[index].username}?`)) {
+        users.splice(index, 1);
+        localStorage.setItem('speedSystemUsers', JSON.stringify(users));
+        renderUsersList();
+      }
+    });
+  });
+}
+
+// Aggiungi nuovo utente
+function addUser(username, password, role) {
+  if (!username || !password) {
+    alert('Username e password sono obbligatori');
+    return false;
+  }
+  
+  // Controlla se l'username esiste già
+  if (users.some(u => u.username === username)) {
+    alert('Username già esistente');
+    return false;
+  }
+  
+  // Aggiungi il nuovo utente
+  users.push({
+    username,
+    password,
+    role
+  });
+  
+  // Salva nel localStorage
+  localStorage.setItem('speedSystemUsers', JSON.stringify(users));
+  
+  // Aggiorna la lista utenti
+  renderUsersList();
+  
+  return true;
+}
+
+// Funzioni per la persistenza dei dati
+function saveLogsToStorage() {
+  localStorage.setItem('speedSystemLogs', JSON.stringify(logs));
+}
+
+function loadLogsFromStorage() {
+  const storedLogs = localStorage.getItem('speedSystemLogs');
+  if (storedLogs) {
+    logs = JSON.parse(storedLogs);
+    
+    // Aggiorna l'ultimo ID log
+    if (logs.length > 0) {
+      lastLogId = Math.max(...logs.map(log => log.id));
+      
+      // Aggiorna le statistiche
+      logs.forEach(log => {
+        statsData.totalDetections++;
+        statsData.highestSpeed = Math.max(statsData.highestSpeed, log.speed);
+        statsData.totalExcess += log.excess;
+        
+        if (isToday(log.timestamp)) {
+          statsData.detectionsToday++;
+        }
+        
+        // Aggiorna i dati del grafico (solo gli ultimi 20)
+        if (logs.length <= 20) {
+          const time = new Date(log.timestamp);
+          speedData.labels.push(formatTime(time));
+          speedData.speeds.push(log.speed);
+        }
+      });
+      
+      // Se ci sono più di 20 log, prendi gli ultimi 20 per il grafico
+      if (logs.length > 20) {
+        const recentLogs = logs.slice(-20);
+        recentLogs.forEach(log => {
+          const time = new Date(log.timestamp);
+          speedData.labels.push(formatTime(time));
+          speedData.speeds.push(log.speed);
+        });
+      }
+      
+      // Aggiorna le statistiche
+      updateStats();
+      
+      // Aggiorna il grafico
+      updateChart();
+    }
+    
+    filteredLogs = [...logs];
+    renderLogs();
+  }
+}
+
+// Funzioni di amministrazione
+function executeAdminAction() {
+  const actionType = document.getElementById('delete-option').value;
+  
+  if (actionType === 'all') {
+    if (confirm('Sei sicuro di voler eliminare TUTTI i dati? Questa azione non può essere annullata.')) {
+      logs = [];
+      saveLogsToStorage();
+      resetStats();
+      applyFilters();
+      alert('Tutti i dati sono stati eliminati');
+    }
+  } else if (actionType === 'older-than-month') {
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    
+    const filteredOut = logs.filter(log => new Date(log.timestamp) < oneMonthAgo);
+    if (filteredOut.length === 0) {
+      alert('Non ci sono dati più vecchi di un mese');
+      return;
+    }
+    
+    if (confirm(`Stai per eliminare ${filteredOut.length} rilevazioni più vecchie di un mese. Confermi?`)) {
+      logs = logs.filter(log => new Date(log.timestamp) >= oneMonthAgo);
+      saveLogsToStorage();
+      recalculateStats();
+      applyFilters();
+      alert(`${filteredOut.length} rilevazioni sono state eliminate`);
+    }
+  } else if (actionType === 'older-than-week') {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    
+    const filteredOut = logs.filter(log => new Date(log.timestamp) < oneWeekAgo);
+    if (filteredOut.length === 0) {
+      alert('Non ci sono dati più vecchi di una settimana');
+      return;
+    }
+    
+    if (confirm(`Stai per eliminare ${filteredOut.length} rilevazioni più vecchie di una settimana. Confermi?`)) {
+      logs = logs.filter(log => new Date(log.timestamp) >= oneWeekAgo);
+      saveLogsToStorage();
+      recalculateStats();
+      applyFilters();
+      alert(`${filteredOut.length} rilevazioni sono state eliminate`);
+    }
+  } else if (actionType === 'by-date') {
+    const selectedDate = document.getElementById('delete-date').value;
+    if (!selectedDate) {
+      alert('Seleziona una data');
+      return;
+    }
+    
+    const startOfDay = new Date(selectedDate);
+    const endOfDay = new Date(selectedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    const filteredOut = logs.filter(log => {
+      const logDate = new Date(log.timestamp);
+      return logDate >= startOfDay && logDate <= endOfDay;
+    });
+    
+    if (filteredOut.length === 0) {
+      alert(`Non ci sono dati per la data ${selectedDate}`);
+      return;
+    }
+    
+    if (confirm(`Stai per eliminare ${filteredOut.length} rilevazioni del ${selectedDate}. Confermi?`)) {
+      logs = logs.filter(log => {
+        const logDate = new Date(log.timestamp);
+        return !(logDate >= startOfDay && logDate <= endOfDay);
+      });
+      saveLogsToStorage();
+      recalculateStats();
+      applyFilters();
+      alert(`${filteredOut.length} rilevazioni sono state eliminate`);
+    }
+  }
+}
+
+// Ricalcola le statistiche dopo eliminazione di dati
+function recalculateStats() {
+  statsData = {
+    totalDetections: logs.length,
+    highestSpeed: 0,
+    totalExcess: 0,
+    detectionsToday: 0
+  };
+  
+  logs.forEach(log => {
+    statsData.highestSpeed = Math.max(statsData.highestSpeed, log.speed);
+    statsData.totalExcess += log.excess;
+    
+    if (isToday(log.timestamp)) {
+      statsData.detectionsToday++;
+    }
+  });
+  
+  // Aggiorna il grafico
+  speedData = {
+    labels: [],
+    speeds: []
+  };
+  
+  // Prendi gli ultimi 20 log per il grafico
+  const recentLogs = logs.slice(-20);
+  recentLogs.forEach(log => {
+    const time = new Date(log.timestamp);
+    speedData.labels.push(formatTime(time));
+    speedData.speeds.push(log.speed);
+  });
+  
+  updateStats();
+  updateChart();
+}
+
+function resetStats() {
+  statsData = {
+    totalDetections: 0,
+    highestSpeed: 0,
+    totalExcess: 0,
+    detectionsToday: 0
+  };
+  
+  speedData = {
+    labels: [],
+    speeds: []
+  };
+  
+  updateStats();
+  updateChart();
+}
+
+// Esporta backup dei dati
+function exportBackup() {
+  const backupData = {
+    logs,
+    statsData,
+    appSettings
+  };
+  
+  const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `speed-system-backup-${formatDate(new Date())}.json`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// Aggiunta all'inizializzazione
+window.addEventListener('load', () => {
+  loadSettings();
+  initAuth();
+  loadLogsFromStorage();
+  
+  // Interval per il salvataggio automatico dei dati
+  setInterval(saveLogsToStorage, 60000); // Salva ogni minuto
+  
+  fetchLogs();
+  updateChart();
+});
+
+// Modificare la funzione fetchLogs
+async function fetchLogs() {
+  try {
+    statusIndicator.className = 'inline-block w-3 h-3 bg-yellow-400 rounded-full';
+    connectionStatus.textContent = 'Recupero dati...';
+    
+    const response = await fetch(`${API_URL}?since=${lastLogId}`);
+    if (!response.ok) throw new Error('Errore di rete');
+    
+    const newLogs = await response.json();
+    
+    if (newLogs.length > 0) {
+      // Aggiorna l'ultimo ID log
+      lastLogId = Math.max(...newLogs.map(log => log.id));
+      
+      // Marca i nuovi log
+      newLogs.forEach(log => {
+        log.isNew = true;
+        
+        // Aggiorna le statistiche
+        statsData.totalDetections++;
+        statsData.highestSpeed = Math.max(statsData.highestSpeed, log.speed);
+        statsData.totalExcess += log.excess;
+        
+        if (isToday(log.timestamp)) {
+          statsData.detectionsToday++;
+        }
+        
+        // Aggiorna i dati del grafico
+        const time = new Date(log.timestamp);
+        speedData.labels.push(formatTime(time));
+        speedData.speeds.push(log.speed);
+        
+        // Limita i dati del grafico a 20 punti
+        if (speedData.labels.length > 20) {
+          speedData.labels.shift();
+          speedData.speeds.shift();
+        }
+        
+        // Riproduce il suono di notifica
+        playNotificationSound();
+      });
+      
+      // Aggiungi i nuovi log all'inizio dell'array
+      logs = [...newLogs, ...logs];
+      
+      // Salva i log nel localStorage
+      saveLogsToStorage();
+      
+      // Riapplica i filtri
+      applyFilters();
+      
+      // Aggiorna il grafico
+      updateChart();
+      
+      // Aggiorna le statistiche
+      updateStats();
+    }
+    
+    statusIndicator.className = 'inline-block w-3 h-3 bg-green-400 rounded-full';
+    connectionStatus.textContent = 'Connesso';
+  } catch (error) {
+    console.error('Errore nel recupero dei log:', error);
+    statusIndicator.className = 'inline-block w-3 h-3 bg-red-500 rounded-full';
+    connectionStatus.textContent = 'Errore di connessione';
+  }
+  
+  // Richiedi nuovamente dopo l'intervallo
+  setTimeout(fetchLogs, POLL_INTERVAL);
+}
+
+// Event listeners per il sistema di login
+document.getElementById('login-button').addEventListener('click', () => {
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+  login(username, password);
+});
+
+// Event listener per admin actions
+document.getElementById('delete-option').addEventListener('change', (e) => {
+  const dateInput = document.getElementById('delete-date');
+  if (e.target.value === 'by-date') {
+    dateInput.classList.remove('hidden');
+  } else {
+    dateInput.classList.add('hidden');
+  }
+});
+
+document.getElementById('close-admin-modal').addEventListener('click', () => {
+  document.getElementById('admin-actions-modal').classList.add('hidden');
+});
+
+document.getElementById('execute-admin-action').addEventListener('click', executeAdminAction);
+
+document.getElementById('backup-data').addEventListener('click', exportBackup);
+
+document.getElementById('manage-users').addEventListener('click', () => {
+  document.getElementById('admin-actions-modal').classList.add('hidden');
+  document.getElementById('manage-users-modal').classList.remove('hidden');
+  renderUsersList();
+});
+
+document.getElementById('close-users-modal').addEventListener('click', () => {
+  document.getElementById('manage-users-modal').classList.add('hidden');
+});
+
+document.getElementById('add-user').addEventListener('click', () => {
+  const username = document.getElementById('new-username').value;
+  const password = document.getElementById('new-password').value;
+  const role = document.getElementById('new-role').value;
+  
+  if (addUser(username, password, role)) {
+    document.getElementById('new-username').value = '';
+    document.getElementById('new-password').value = '';
+    document.getElementById('new-role').value = 'user';
+  }
+});
     
     // Stato
     let logs = [];
