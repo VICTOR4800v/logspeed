@@ -14,12 +14,12 @@ async function connectToDatabase() {
   if (cachedDb) {
     return cachedDb;
   }
-  
+
   const client = new MongoClient(MONGODB_URI, {
     useNewUrlParser: true,
-    useUnifiedTopology: true
+    useUnifiedTopology: true,
   });
-  
+
   try {
     await client.connect();
     const db = client.db(DB_NAME);
@@ -27,7 +27,6 @@ async function connectToDatabase() {
     return db;
   } catch (error) {
     console.error("Error connecting to database:", error);
-    // Fallback to in-memory if MongoDB fails
     return null;
   }
 }
@@ -36,60 +35,57 @@ async function connectToDatabase() {
 let logs = [];
 let nextId = 1;
 
+// Funzione per ottenere il prossimo ID da MongoDB
+async function getNextId(collection) {
+  const latestLog = await collection.find().sort({ id: -1 }).limit(1).toArray();
+  return latestLog.length > 0 ? latestLog[0].id + 1 : 1;
+}
+
 exports.handler = async (event, context) => {
-  // Set CORS headers
   const headers = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type",
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
   };
-  
-  // Handle preflight request
+
   if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 204,
-      headers
+      headers,
     };
   }
-  
-  // Try to connect to MongoDB
+
   const db = await connectToDatabase();
   let collection = null;
-  
+
   if (db) {
     collection = db.collection(COLLECTION_NAME);
   }
-  
+
   try {
-    // POST request from Roblox
     if (event.httpMethod === "POST") {
       const data = JSON.parse(event.body);
 
-      // Basic validation
       if (!data.vehicleName || !data.speed || !data.excess) {
         return {
           statusCode: 400,
           headers,
-          body: JSON.stringify({ error: "Missing required fields" })
+          body: JSON.stringify({ error: "Missing required fields" }),
         };
       }
 
-      // Create log entry
       const logEntry = {
         id: collection ? await getNextId(collection) : nextId++,
         vehicleName: data.vehicleName,
         speed: data.speed,
         excess: data.excess,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
-      // Store log
       if (collection) {
         await collection.insertOne(logEntry);
       } else {
-        // Fallback to in-memory
         logs.push(logEntry);
-        // Keep only latest 1000 logs to prevent memory issues
         if (logs.length > 1000) {
           logs = logs.slice(-1000);
         }
@@ -98,16 +94,40 @@ exports.handler = async (event, context) => {
       return {
         statusCode: 200,
         headers,
-        body: JSON.stringify({ success: true, id: logEntry.id })
+        body: JSON.stringify({ success: true, id: logEntry.id }),
       };
     }
 
-    // GET request from frontend
     if (event.httpMethod === "GET") {
-      const since = parseInt(event.queryStringParameters?.since || 0);
-
+      const since = parseInt(event.queryStringParameters?.since || 0, 10);
       let newLogs = [];
-      
+
       if (collection) {
-        // Query MongoDB
-        newL
+        // Query MongoDB per log con ID maggiore di "since"
+        newLogs = await collection.find({ id: { $gt: since } }).sort({ id: 1 }).toArray();
+      } else {
+        // Fallback: in-memory
+        newLogs = logs.filter(log => log.id > since);
+      }
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify(newLogs),
+      };
+    }
+
+    return {
+      statusCode: 405,
+      headers,
+      body: JSON.stringify({ error: "Method not allowed" }),
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: "Internal server error" }),
+    };
+  }
+};
