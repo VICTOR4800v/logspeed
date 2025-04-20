@@ -4,8 +4,5 @@
   "description": "Sistema di rilevazione della velocità per Roblox",
   "dependencies": {
     "firebase-admin": "^11.5.0"
-  },
-  "scripts": {
-    "build": "echo 'building...'"
   }
 }
