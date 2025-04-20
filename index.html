@@ -818,8 +818,7 @@ async function fetchLogs() {
   try {
     statusIndicator.className = 'inline-block w-3 h-3 bg-yellow-400 rounded-full';
     connectionStatus.textContent = 'Recupero dati...';
-   const url = lastLogId ? `${API_URL}?since=${lastLogId}` : `${API_URL}`;
-const response = await fetch(url);
+    const response = await fetch(`${API_URL}?since=${lastLogId}`);
 
     if (!response.ok) throw new Error('Errore di rete');
     
@@ -1336,8 +1335,9 @@ document.getElementById('add-user').addEventListener('click', () => {
       try {
         statusIndicator.className = 'inline-block w-3 h-3 bg-yellow-400 rounded-full';
         connectionStatus.textContent = 'Recupero dati...';
-        
-        const response = await fetch(`${API_URL}?since=${lastLogId}`);
+        const url = lastLogId ? `${API_URL}?since=${lastLogId}` : `${API_URL}`;
+const response = await fetch(url);
+
         if (!response.ok) throw new Error('Errore di rete');
         
         const newLogs = await response.json();
