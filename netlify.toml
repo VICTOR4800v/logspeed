@@ -1,5 +1,7 @@
 [build]
   functions = "functions"
+  publish = "./"
+  command = "npm install"
 
 [[redirects]]
   from = "/api/*"
