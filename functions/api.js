@@ -1,4 +1,10 @@
-const admin = require("firebase-admin");
+let admin;
+if (!global._firebaseAdminInitialized) {
+  admin = require("firebase-admin");
+  global._firebaseAdminInitialized = true;
+} else {
+  admin = require("firebase-admin");
+}
 
 let firebaseConfig;
 if (process.env.FIREBASE_CONFIG) {
