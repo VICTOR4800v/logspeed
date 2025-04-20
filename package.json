@@ -5,4 +5,5 @@
   "dependencies": {
     "firebase-admin": "^11.5.0"
   }
+  npm install firebase-admin
 }
