@@ -85,12 +85,29 @@ exports.handler = async (event, context) => {
   };
   
   if (event.httpMethod === "OPTIONS") {
-    return {
-      statusCode: 204,
-      headers,
-    };
+  let newLogs = [];
+
+if (firestore) {
+  const collection = firestore.collection("detections");
+
+  let query = collection.orderBy("id", "desc").limit(20); // default ultimi 20
+
+  const since = parseInt(event.queryStringParameters?.since || 0, 10);
+  if (since > 0) {
+    query = collection.where("id", ">", since).orderBy("id", "asc").limit(100);
   }
-  
+
+  const snapshot = await query.get();
+  newLogs = snapshot.docs.map(doc => {
+    const data = doc.data();
+    if (data.timestamp?.toDate) {
+      data.timestamp = data.timestamp.toDate().toISOString();
+    }
+    return data;
+  });
+}
+
+
   try {
     // Inizializza Firebase
     const firestore = initializeFirebase();
