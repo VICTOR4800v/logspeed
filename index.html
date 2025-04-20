@@ -818,60 +818,39 @@ async function fetchLogs() {
   try {
     statusIndicator.className = 'inline-block w-3 h-3 bg-yellow-400 rounded-full';
     connectionStatus.textContent = 'Recupero dati...';
-    const response = await fetch(`${API_URL}?since=${lastLogId}`);
+
+    const url = lastLogId ? `${API_URL}?since=${lastLogId}` : API_URL;
+    const response = await fetch(url);
 
     if (!response.ok) throw new Error('Errore di rete');
-    
+
     const newLogs = await response.json();
-    
+
     if (newLogs.length > 0) {
-      // Aggiorna l'ultimo ID log
       lastLogId = Math.max(...newLogs.map(log => log.id));
-      
-      // Marca i nuovi log
       newLogs.forEach(log => {
         log.isNew = true;
-        
-        // Aggiorna le statistiche
         statsData.totalDetections++;
         statsData.highestSpeed = Math.max(statsData.highestSpeed, log.speed);
         statsData.totalExcess += log.excess;
-        
-        if (isToday(log.timestamp)) {
-          statsData.detectionsToday++;
-        }
-        
-        // Aggiorna i dati del grafico
+        if (isToday(log.timestamp)) statsData.detectionsToday++;
         const time = new Date(log.timestamp);
         speedData.labels.push(formatTime(time));
         speedData.speeds.push(log.speed);
-        
-        // Limita i dati del grafico a 20 punti
         if (speedData.labels.length > 20) {
           speedData.labels.shift();
           speedData.speeds.shift();
         }
-        
-        // Riproduce il suono di notifica
         playNotificationSound();
       });
-      
-      // Aggiungi i nuovi log all'inizio dell'array
+
       logs = [...newLogs, ...logs];
-      
-      // Salva i log nel localStorage
       saveLogsToStorage();
-      
-      // Riapplica i filtri
       applyFilters();
-      
-      // Aggiorna il grafico
       updateChart();
-      
-      // Aggiorna le statistiche
       updateStats();
     }
-    
+
     statusIndicator.className = 'inline-block w-3 h-3 bg-green-400 rounded-full';
     connectionStatus.textContent = 'Connesso';
   } catch (error) {
@@ -879,10 +858,10 @@ async function fetchLogs() {
     statusIndicator.className = 'inline-block w-3 h-3 bg-red-500 rounded-full';
     connectionStatus.textContent = 'Errore di connessione';
   }
-  
-  // Richiedi nuovamente dopo l'intervallo
+
   setTimeout(fetchLogs, POLL_INTERVAL);
 }
+
 
 // Event listeners per il sistema di login
 document.getElementById('login-button').addEventListener('click', () => {
