@@ -1,90 +1,81 @@
-// api.js (Netlify Function) - Versione migliorata
-const { MongoClient } = require("mongodb");
+// api.js (Netlify Function) con Firebase
+const admin = require("firebase-admin");
 
-// Impostazioni per MongoDB
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://username:password@cluster.mongodb.net/speedSystem";
-const DB_NAME = "speedSystem";
-const COLLECTION_NAME = "detections";
-const MAX_RECORDS = 500; // Numero massimo di record da mantenere
-
-// Cache per evitare connessioni ripetute
-let cachedDb = null;
-let client = null;
-
-// Connessione al database con retry
-async function connectToDatabase(retries = 3) {
-  if (cachedDb) {
-    return { db: cachedDb, client };
-  }
-  
-  client = new MongoClient(MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 5000 // Timeout ridotto per fallire più velocemente
-  });
-  
-  try {
-    await client.connect();
-    const db = client.db(DB_NAME);
-    cachedDb = db;
-    console.log("Successfully connected to MongoDB");
-    return { db, client };
-  } catch (error) {
-    console.error(`Connection error (attempts left: ${retries}):`, error);
-    
-    if (retries > 0) {
-      console.log(`Retrying connection in 1 second...`);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return connectToDatabase(retries - 1);
-    }
-    
-    console.error("All connection attempts failed");
-    return { db: null, client: null };
-  }
+// Assicurati di aggiungere queste variabili nelle impostazioni di Netlify
+// O in un file .env locale per lo sviluppo
+let firebaseConfig;
+if (process.env.FIREBASE_CONFIG) {
+  firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
+} else {
+  console.warn("FIREBASE_CONFIG not found, using empty config");
+  firebaseConfig = {};
 }
 
-// Pulizia dei vecchi record per rispettare il limite di storage
-async function cleanupOldRecords(collection) {
-  try {
-    // Conta i record totali
-    const count = await collection.countDocuments();
-    
-    // Se superiamo la soglia, elimina i record più vecchi
-    if (count > MAX_RECORDS) {
-      const recordsToDelete = count - MAX_RECORDS;
-      const oldestRecords = await collection.find()
-        .sort({ timestamp: 1 })
-        .limit(recordsToDelete)
-        .toArray();
-      
-      if (oldestRecords.length > 0) {
-        const oldestIds = oldestRecords.map(r => r.id);
-        await collection.deleteMany({ id: { $in: oldestIds } });
-        console.log(`Deleted ${oldestRecords.length} old records to maintain storage limits`);
-      }
+// Inizializza Firebase solo una volta
+let db = null;
+function initializeFirebase() {
+  if (!db) {
+    if (!admin.apps.length) {
+      admin.initializeApp({
+        credential: admin.credential.cert(firebaseConfig)
+      });
     }
-  } catch (error) {
-    console.error("Error during cleanup:", error);
+    db = admin.firestore();
   }
+  return db;
 }
 
-// In-memory storage fallback
+// In-memory fallback
 let logs = [];
 let nextId = 1;
 
-// Funzione per ottenere il prossimo ID da MongoDB
-async function getNextId(collection) {
+// Funzione per ottenere il prossimo ID
+async function getNextId(db) {
   try {
-    const latestLog = await collection.find().sort({ id: -1 }).limit(1).toArray();
-    return latestLog.length > 0 ? latestLog[0].id + 1 : 1;
+    const snapshot = await db.collection("detections")
+      .orderBy("id", "desc")
+      .limit(1)
+      .get();
+    
+    if (snapshot.empty) {
+      return 1;
+    } else {
+      return snapshot.docs[0].data().id + 1;
+    }
   } catch (error) {
     console.error("Error getting next ID:", error);
     return nextId++;
   }
 }
 
+// Pulizia dati vecchi (mantiene ultimi 500 record)
+async function cleanupOldRecords(db) {
+  try {
+    const collectionRef = db.collection("detections");
+    const countSnapshot = await collectionRef.count().get();
+    const count = countSnapshot.data().count;
+    
+    if (count > 500) {
+      const toDelete = count - 500;
+      const oldRecords = await collectionRef
+        .orderBy("timestamp")
+        .limit(toDelete)
+        .get();
+      
+      const batch = db.batch();
+      oldRecords.docs.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      
+      await batch.commit();
+      console.log(`Deleted ${oldRecords.size} old records`);
+    }
+  } catch (error) {
+    console.error("Cleanup error:", error);
+  }
+}
+
 exports.handler = async (event, context) => {
-  // Assicurati che la funzione termini correttamente
   context.callbackWaitsForEmptyEventLoop = false;
   
   const headers = {
@@ -101,15 +92,8 @@ exports.handler = async (event, context) => {
   }
   
   try {
-    // Connessione al database con gestione errori migliorata
-    const { db, client: mongoClient } = await connectToDatabase();
-    let collection = null;
-    
-    if (db) {
-      collection = db.collection(COLLECTION_NAME);
-    } else {
-      console.warn("Using in-memory fallback due to database connection failure");
-    }
+    // Inizializza Firebase
+    const firestore = initializeFirebase();
     
     if (event.httpMethod === "POST") {
       const data = JSON.parse(event.body);
@@ -122,22 +106,31 @@ exports.handler = async (event, context) => {
         };
       }
       
-      const logEntry = {
-        id: collection ? await getNextId(collection) : nextId++,
-        vehicleName: data.vehicleName,
-        speed: data.speed,
-        excess: data.excess,
-        timestamp: new Date().toISOString(),
-      };
+      let logEntry;
       
-      if (collection) {
-        await collection.insertOne(logEntry);
-        // Pulisci i vecchi record dopo l'inserimento
-        await cleanupOldRecords(collection);
+      if (firestore) {
+        const newId = await getNextId(firestore);
+        logEntry = {
+          id: newId,
+          vehicleName: data.vehicleName,
+          speed: data.speed,
+          excess: data.excess,
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        };
+        
+        await firestore.collection("detections").add(logEntry);
+        await cleanupOldRecords(firestore);
       } else {
+        logEntry = {
+          id: nextId++,
+          vehicleName: data.vehicleName,
+          speed: data.speed,
+          excess: data.excess,
+          timestamp: new Date().toISOString(),
+        };
         logs.push(logEntry);
-        if (logs.length > 1000) {
-          logs = logs.slice(-1000);
+        if (logs.length > 500) {
+          logs = logs.slice(-500);
         }
       }
       
@@ -152,14 +145,22 @@ exports.handler = async (event, context) => {
       const since = parseInt(event.queryStringParameters?.since || 0, 10);
       let newLogs = [];
       
-      if (collection) {
-        // Query MongoDB per log con ID maggiore di "since"
-        newLogs = await collection.find({ id: { $gt: since } })
-          .sort({ id: 1 })
-          .limit(100) // Limita il numero di risultati per prestazioni
-          .toArray();
+      if (firestore) {
+        const snapshot = await firestore.collection("detections")
+          .where("id", ">", since)
+          .orderBy("id", "asc")
+          .limit(100)
+          .get();
+        
+        newLogs = snapshot.docs.map(doc => {
+          const data = doc.data();
+          // Converte Timestamp in ISO string per compatibilità
+          if (data.timestamp && typeof data.timestamp.toDate === 'function') {
+            data.timestamp = data.timestamp.toDate().toISOString();
+          }
+          return data;
+        });
       } else {
-        // Fallback: in-memory
         newLogs = logs.filter(log => log.id > since);
       }
       
@@ -182,8 +183,7 @@ exports.handler = async (event, context) => {
       headers,
       body: JSON.stringify({ 
         error: "Internal server error", 
-        message: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined 
+        message: error.message
       }),
     };
   }
