@@ -518,6 +518,7 @@ function hideLoggedInUI() {
 }
 
 // Gestione utenti
+// Sostituisci la funzione renderUsersList con questa versione
 function renderUsersList() {
   const usersList = document.getElementById('users-list');
   usersList.innerHTML = '';
@@ -533,17 +534,34 @@ function renderUsersList() {
         </span>
       </div>
       <div class="flex space-x-2">
-        <button class="edit-user-btn text-blue-500 hover:text-blue-700" data-index="${index}">
-          <i class="fas fa-edit"></i>
-        </button>
-        <button class="delete-user-btn text-red-500 hover:text-red-700" data-index="${index}">
-          <i class="fas fa-trash"></i>
+        <button class="change-password-btn text-blue-500 hover:text-blue-700" data-index="${index}">
+          <i class="fas fa-key"></i> Cambia Password
         </button>
       </div>
     `;
     usersList.appendChild(userRow);
   });
   
+  // Aggiungi event listeners ai pulsanti
+  document.querySelectorAll('.change-password-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const index = e.currentTarget.dataset.index;
+      const user = users[index];
+      
+      const newPassword = prompt(`Inserisci la nuova password per ${user.username}:`);
+      if (newPassword && newPassword.length >= 6) {
+        users[index].password = newPassword;
+        localStorage.setItem('speedSystemUsers', JSON.stringify(users));
+        alert(`Password aggiornata per ${user.username}`);
+      } else if (newPassword) {
+        alert('La password deve essere di almeno 6 caratteri');
+      }
+    });
+  });
+}
+
+// Nel tuo HTML, cambia il titolo della sezione
+// da "Aggiungi nuovo utente" a "Gestione password"
   // Aggiungi event listeners ai pulsanti
   document.querySelectorAll('.edit-user-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -845,6 +863,7 @@ async function fetchLogs() {
       });
 
       logs = [...newLogs, ...logs];
+       logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
       saveLogsToStorage();
       applyFilters();
       updateChart();
@@ -998,29 +1017,33 @@ document.getElementById('add-user').addEventListener('click', () => {
     }
     
     // Crea un elemento di log
-    function createLogEntry(log, index) {
-      const logEntry = document.createElement('div');
-      logEntry.className = 'log-entry flex p-3 text-sm items-center' + (log.isNew ? ' new-entry' : '');
-      logEntry.dataset.id = log.id;
-      
-      const time = new Date(log.timestamp);
-      
-      logEntry.innerHTML = `
-        <div class="w-1/12">${index}</div>
-        <div class="w-1/6">${formatTime(time)}</div>
-        <div class="w-1/4">${log.vehicleName}</div>
-        <div class="w-1/6 font-medium">${log.speed} km/h</div>
-        <div class="w-1/6 text-red-600">+${log.excess} km/h</div>
-        <div class="w-1/6">${formatDate(time)}</div>
-        <div class="w-1/12">
-          <button class="text-gray-500 hover:text-gray-700 detail-btn" data-id="${log.id}">
-            <i class="fas fa-info-circle"></i>
-          </button>
-        </div>
-      `;
-      
-      return logEntry;
-    }
+function createLogEntry(log, index) {
+  const logEntry = document.createElement('div');
+  logEntry.className = 'log-entry flex p-3 text-sm items-center' + (log.isNew ? ' new-entry' : '');
+  logEntry.dataset.id = log.id;
+  
+  const time = new Date(log.timestamp);
+  
+  // Aggiungi la zona (sostituisci con la tua logica di determinazione della zona)
+  const zona = log.zona || 'Zona non specificata'; // Modifica in base ai tuoi dati
+  
+  logEntry.innerHTML = `
+    <div class="w-1/12">${index}</div>
+    <div class="w-1/6">${formatTime(time)}</div>
+    <div class="w-1/6">${zona}</div>
+    <div class="w-1/4">${log.vehicleName}</div>
+    <div class="w-1/6 font-medium">${log.speed} km/h</div>
+    <div class="w-1/6 text-red-600">+${log.excess} km/h</div>
+    <div class="w-1/6">${formatDate(time)}</div>
+    <div class="w-1/12">
+      <button class="text-gray-500 hover:text-gray-700 detail-btn" data-id="${log.id}">
+        <i class="fas fa-info-circle"></i>
+      </button>
+    </div>
+  `;
+  
+  return logEntry;
+}
     
     // Aggiorna le statistiche
     function updateStats() {
@@ -1035,50 +1058,305 @@ document.getElementById('add-user').addEventListener('click', () => {
     }
     
     // Aggiorna il grafico
-    function updateChart() {
-      if (chartInstance) {
-        chartInstance.data.labels = speedData.labels;
-        chartInstance.data.datasets[0].data = speedData.speeds;
-        chartInstance.update();
-      } else {
-        const ctx = document.getElementById('speed-chart').getContext('2d');
-        chartInstance = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: speedData.labels,
-            datasets: [{
-              label: 'Velocità (km/h)',
-              data: speedData.speeds,
-              borderColor: 'rgb(59, 130, 246)',
-              backgroundColor: 'rgba(59, 130, 246, 0.2)',
-              borderWidth: 2,
-              tension: 0.1,
-              fill: true
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              y: {
-                beginAtZero: true,
-                title: {
-                  display: true,
-                  text: 'Velocità (km/h)'
-                }
-              },
-              x: {
-                title: {
-                  display: true,
-                  text: 'Ora rilevazione'
-                }
-              }
+   // Modifica la funzione updateChart per includere data e ora
+function updateChart() {
+  if (chartInstance) {
+    chartInstance.destroy(); // Distruggi il grafico esistente per ricrearlo
+  }
+  
+  // Crea etichette più descrittive con data e ora
+  const formattedLabels = speedData.labels.map((label, i) => {
+    const logIndex = logs.length - speedData.labels.length + i;
+    if (logIndex >= 0 && logs[logIndex]) {
+      const date = new Date(logs[logIndex].timestamp);
+      return `${date.toLocaleDateString()} ${label}`;
+    }
+    return label;
+  });
+  
+  const ctx = document.getElementById('speed-chart').getContext('2d');
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: formattedLabels,
+      datasets: [{
+        label: 'Velocità (km/h)',
+        data: speedData.speeds,
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+        borderWidth: 2,
+        tension: 0.1,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: {
+          display: true,
+          text: 'Andamento velocità - Ultime 20 rilevazioni',
+          font: {
+            size: 16
+          }
+        },
+        tooltip: {
+          callbacks: {
+            title: function(tooltipItems) {
+              return 'Rilevazione del ' + tooltipItems[0].label;
             }
           }
-        });
+        },
+        legend: {
+          position: 'bottom'
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'Velocità (km/h)'
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: 'Data e ora rilevazione'
+          },
+          ticks: {
+            maxRotation: 45,
+            minRotation: 45
+          }
+        }
       }
     }
+  });
+}
+    // Funzione per creare un grafico a torta per tipi di veicoli
+function createVehicleTypeChart() {
+  const vehicleTypes = {};
+  logs.forEach(log => {
+    // Estrai il tipo di veicolo (esempio: Auto, Moto, Camion, etc.)
+    const type = log.vehicleName.split(' ')[0]; // Modifica in base alla tua logica
+    vehicleTypes[type] = (vehicleTypes[type] || 0) + 1;
+  });
+  
+  const colors = [
+    'rgba(54, 162, 235, 0.8)',
+    'rgba(255, 99, 132, 0.8)',
+    'rgba(255, 206, 86, 0.8)',
+    'rgba(75, 192, 192, 0.8)',
+    'rgba(153, 102, 255, 0.8)'
+  ];
+  
+  const ctx = document.getElementById('vehicle-type-chart').getContext('2d');
+  new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: Object.keys(vehicleTypes),
+      datasets: [{
+        data: Object.values(vehicleTypes),
+        backgroundColor: colors.slice(0, Object.keys(vehicleTypes).length)
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: 'Distribuzione per tipo di veicolo'
+        },
+        legend: {
+          position: 'bottom'
+        }
+      }
+    }
+  });
+}
+
+// Funzione per creare un grafico per fasce orarie
+function createHourlyDistributionChart() {
+  const hourlyData = Array(24).fill(0);
+  
+  logs.forEach(log => {
+    const hour = new Date(log.timestamp).getHours();
+    hourlyData[hour]++;
+  });
+  
+  const ctx = document.getElementById('hourly-distribution-chart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+      datasets: [{
+        label: 'Numero rilevazioni',
+        data: hourlyData,
+        backgroundColor: 'rgba(75, 192, 192, 0.8)'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: 'Distribuzione rilevazioni per ora del giorno'
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'Numero rilevazioni'
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: 'Ora del giorno'
+          }
+        }
+      }
+    }
+  });
+}
+
+// Calcola e mostra statistiche avanzate
+function showAdvancedStats() {
+  // Trova l'ora di punta (quella con più rilevazioni)
+  const hourlyData = Array(24).fill(0);
+  logs.forEach(log => {
+    const hour = new Date(log.timestamp).getHours();
+    hourlyData[hour]++;
+  });
+  const peakHour = hourlyData.indexOf(Math.max(...hourlyData));
+  
+  // Calcola la deviazione standard delle velocità
+  const speeds = logs.map(log => log.speed);
+  const avg = speeds.reduce((sum, speed) => sum + speed, 0) / speeds.length;
+  const variance = speeds.reduce((sum, speed) => sum + Math.pow(speed - avg, 2), 0) / speeds.length;
+  const stdDev = Math.sqrt(variance).toFixed(2);
+  
+  // Mostra le statistiche
+  document.getElementById('advanced-stats').innerHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div class="p-4 bg-blue-50 rounded-lg shadow-sm">
+        <h3 class="font-semibold text-blue-800">Ora di punta</h3>
+        <p class="text-2xl font-bold">${peakHour}:00 - ${peakHour+1}:00</p>
+        <p class="text-sm text-gray-600">${hourlyData[peakHour]} rilevazioni</p>
+      </div>
+      <div class="p-4 bg-green-50 rounded-lg shadow-sm">
+        <h3 class="font-semibold text-green-800">Deviazione standard velocità</h3>
+        <p class="text-2xl font-bold">${stdDev} km/h</p>
+        <p class="text-sm text-gray-600">Indica la variabilità delle velocità</p>
+      </div>
+      <div class="p-4 bg-purple-50 rounded-lg shadow-sm">
+        <h3 class="font-semibold text-purple-800">Indice di rischio</h3>
+        <p class="text-2xl font-bold">${((statsData.totalExcess / statsData.totalDetections) * 10).toFixed(1)}/10</p>
+        <p class="text-sm text-gray-600">Basato sull'eccesso medio di velocità</p>
+      </div>
+    </div>
+  `;
+}
+
+// Aggiungi questa chiamata alla tua funzione di inizializzazione
+window.addEventListener('load', () => {
+  loadSettings();
+  fetchLogs();
+  updateChart();
+  
+  // Aggiungi le nuove funzionalità
+  createVehicleTypeChart();
+  createHourlyDistributionChart();
+  showAdvancedStats();
+});
+
+// Aggiungi anche la chiamata quando aggiorni i log
+function handleNewData() {
+  // ... codice esistente ...
+  createVehicleTypeChart();
+  createHourlyDistributionChart();
+  showAdvancedStats();
+}
+    // Aggiungi questa funzione
+function showSpeedLimitModal() {
+  // Crea un modale se non esiste
+  if (!document.getElementById('speed-limit-modal')) {
+    const modal = document.createElement('div');
+    modal.id = 'speed-limit-modal';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden';
+    modal.innerHTML = `
+      <div class="bg-white rounded-lg p-6 w-96 shadow-xl">
+        <h2 class="text-xl font-bold mb-4">Modifica limite di velocità</h2>
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="speed-limit">
+            Nuovo limite (km/h)
+          </label>
+          <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                 id="speed-limit" type="number" min="20" max="150" value="50">
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="zone-select">
+            Zona
+          </label>
+          <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                  id="zone-select">
+            <option value="1">Zona 1 - Urbana</option>
+            <option value="2">Zona 2 - Extraurbana</option>
+            <option value="3">Zona 3 - Autostrada</option>
+          </select>
+        </div>
+        <div class="flex items-center justify-between">
+          <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" 
+                  id="save-speed-limit">
+            Salva
+          </button>
+          <button class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" 
+                  id="cancel-speed-limit">
+            Annulla
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
     
+    // Aggiungi event listeners
+    document.getElementById('save-speed-limit').addEventListener('click', () => {
+      const newLimit = parseInt(document.getElementById('speed-limit').value);
+      const zone = document.getElementById('zone-select').value;
+      if (newLimit >= 20 && newLimit <= 150) {
+        // Salva il nuovo limite di velocità
+        const speedLimits = JSON.parse(localStorage.getItem('speedLimits') || '{}');
+        speedLimits[zone] = newLimit;
+        localStorage.setItem('speedLimits', JSON.stringify(speedLimits));
+        
+        // Aggiorna la visualizzazione
+        const zoneText = document.getElementById('zone-select').options[document.getElementById('zone-select').selectedIndex].text;
+        alert(`Limite di velocità per ${zoneText} impostato a ${newLimit} km/h`);
+        document.getElementById('speed-limit-modal').classList.add('hidden');
+      } else {
+        alert('Il limite deve essere tra 20 e 150 km/h');
+      }
+    });
+    
+    document.getElementById('cancel-speed-limit').addEventListener('click', () => {
+      document.getElementById('speed-limit-modal').classList.add('hidden');
+    });
+  }
+  
+  // Mostra il modale
+  document.getElementById('speed-limit-modal').classList.remove('hidden');
+}
+
+// Aggiungi un pulsante nella navbar o in un'altra posizione appropriata
+const speedLimitButton = document.createElement('button');
+speedLimitButton.className = 'ml-2 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-md text-sm';
+speedLimitButton.innerHTML = '<i class="fas fa-tachometer-alt mr-1"></i> Limite velocità';
+speedLimitButton.addEventListener('click', showSpeedLimitModal);
+
+// Aggiungi il pulsante nella barra di navigazione
+document.querySelector('.header-buttons').appendChild(speedLimitButton);
     // Funzione per riprodurre il suono di notifica
     function playNotificationSound() {
       if (appSettings.enableSound) {
@@ -1296,19 +1574,32 @@ document.getElementById('add-user').addEventListener('click', () => {
       
       POLL_INTERVAL = appSettings.pollInterval;
     }
-    
-    // Attiva/disattiva la modalità scura
-    function toggleDarkMode() {
-      document.body.classList.toggle('dark-mode');
-      localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
-      
-      if (document.body.classList.contains('dark-mode')) {
-        darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-      } else {
-        darkModeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-      }
-    }
-    
+    // Aggiungi questo nella sezione di stile o in un tag <style>
+document.body.classList.contains('dark-mode') ? 
+  document.documentElement.style.setProperty('--text-color', '#ffffff') : 
+  document.documentElement.style.setProperty('--text-color', '#333333');
+
+// Aggiorna la funzione toggleDarkMode
+function toggleDarkMode() {
+  document.body.classList.toggle('dark-mode');
+  localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+  
+  if (document.body.classList.contains('dark-mode')) {
+    darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+    document.documentElement.style.setProperty('--text-color', '#ffffff');
+    // Aggiorna anche i colori delle tabelle e altri elementi
+    document.querySelectorAll('.log-entry').forEach(entry => {
+      entry.classList.add('dark-text');
+    });
+  } else {
+    darkModeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+    document.documentElement.style.setProperty('--text-color', '#333333');
+    document.querySelectorAll('.log-entry').forEach(entry => {
+      entry.classList.remove('dark-text');
+    });
+  }
+}
+
     // Fetch dei log
     async function fetchLogs() {
       try {
@@ -1455,13 +1746,7 @@ Data e ora: ${new Date(log.timestamp).toLocaleString()}`);
         POLL_INTERVAL = appSettings.pollInterval;
       }
       
-      // Carica l'impostazione della modalità scura
-      if (localStorage.getItem('darkMode') === 'true') {
-        document.body.classList.add('dark-mode');
-        darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-      }
-    }
-    
+
     // Inizializzazione
     window.addEventListener('load', () => {
       loadSettings();
