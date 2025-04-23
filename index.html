@@ -30,6 +30,12 @@
       height: 300px;
       position: relative;
     }
+    .vehicle-chart-container {
+  width: 70%;        /* Dimensione personalizzata per questo tipo di grafico */
+  max-width: 450px;
+  height: 250px;
+  margin: 0 auto;
+}
     .dark-mode {
       background-color: #1f2937;
       color: #f9fafb;
@@ -235,7 +241,7 @@
 <!-- Grafico per tipo di veicolo -->
 <div class="bg-white rounded-lg shadow-md p-6 mb-6">
 <h2 class="text-xl font-semibold text-gray-800 mb-4">Distribuzione Tipi di Veicolo</h2>
-<div class="chart-container">
+<div class="vehicle-chart-container">
 <canvas id="vehicle-type-chart"></canvas>
 </div>
 </div>
