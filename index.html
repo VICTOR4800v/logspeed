@@ -6,6 +6,7 @@
   <title>Sistema di Rilevazione Velocità Roblox</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="favicon.png">
   <style>
     .log-entry {
       transition: all 0.3s ease;
@@ -1745,7 +1746,7 @@ Data e ora: ${new Date(log.timestamp).toLocaleString()}`);
         
         POLL_INTERVAL = appSettings.pollInterval;
       }
-      
+    }
 
     // Inizializzazione
     window.addEventListener('load', () => {
