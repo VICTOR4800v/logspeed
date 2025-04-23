@@ -900,18 +900,21 @@ document.getElementById('manage-users').addEventListener('click', () => {
 document.getElementById('close-users-modal').addEventListener('click', () => {
   document.getElementById('manage-users-modal').classList.add('hidden');
 });
+const addUserBtn = document.getElementById('add-user');
+if (addUserBtn) {
+  addUserBtn.addEventListener('click', () => {
+    const username = document.getElementById('new-username').value;
+    const password = document.getElementById('new-password').value;
+    const role = document.getElementById('new-role').value;
 
-document.getElementById('add-user').addEventListener('click', () => {
-  const username = document.getElementById('new-username').value;
-  const password = document.getElementById('new-password').value;
-  const role = document.getElementById('new-role').value;
-  
-  if (addUser(username, password, role)) {
-    document.getElementById('new-username').value = '';
-    document.getElementById('new-password').value = '';
-    document.getElementById('new-role').value = 'user';
-  }
-});
+    if (addUser(username, password, role)) {
+      document.getElementById('new-username').value = '';
+      document.getElementById('new-password').value = '';
+      document.getElementById('new-role').value = 'user';
+    }
+  });
+}
+
     
     // Stato
     let logs = [];
@@ -1543,12 +1546,6 @@ document.querySelector('.header-buttons').appendChild(speedLimitButton);
     
     // Reimposta le impostazioni ai valori predefiniti
     function resetSettings() {
-      appSettings = {
-        pollInterval: 3000,
-        enableSound: false,
-        autoScroll: true,
-        minDisplaySpeed: 80
-      };
       
       pollIntervalSelect.value = appSettings.pollInterval;
       enableSoundCheckbox.checked = appSettings.enableSound;
@@ -1730,7 +1727,12 @@ Data e ora: ${new Date(log.timestamp).toLocaleString()}`);
         POLL_INTERVAL = appSettings.pollInterval;
       }
     }
-
+     let appSettings = {
+        pollInterval: 3000,
+        enableSound: false,
+        autoScroll: true,
+        minDisplaySpeed: 80
+      };
     // Inizializzazione
     window.addEventListener('load', () => {
       loadSettings();
