@@ -1727,7 +1727,12 @@ Data e ora: ${new Date(log.timestamp).toLocaleString()}`);
         POLL_INTERVAL = appSettings.pollInterval;
       }
     }
-
+     let appSettings = {
+        pollInterval: 3000,
+        enableSound: false,
+        autoScroll: true,
+        minDisplaySpeed: 80
+      };
     // Inizializzazione
     window.addEventListener('load', () => {
       loadSettings();
