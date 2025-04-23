@@ -60,6 +60,7 @@
     }
   </style>
 </head>
+
 <body class="bg-gray-100 min-h-screen">
   <!-- Login Modal -->
 <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -190,16 +191,17 @@
   <div class="container mx-auto px-4 py-8">
     <header class="mb-6">
       <div class="flex justify-between items-center">
-        <h1 class="text-3xl font-bold text-gray-800">Sistema di Rilevazione Velocità Roblox</h1>
-        <div class="flex space-x-2">
-          <button id="dark-mode-toggle" class="bg-gray-800 text-white rounded-full p-2">
-            <i class="fas fa-moon"></i>
-          </button>
-          <button id="settings-button" class="bg-blue-500 text-white rounded-full p-2">
-            <i class="fas fa-cog"></i>
-          </button>
-        </div>
-      </div>
+  <h1 class="text-3xl font-bold text-gray-800">Sistema di Rilevazione Velocità Roblox</h1>
+  <div class="header-buttons flex space-x-2">
+    <button id="dark-mode-toggle" class="bg-gray-800 text-white rounded-full p-2">
+      <i class="fas fa-moon"></i>
+    </button>
+    <button id="settings-button" class="bg-blue-500 text-white rounded-full p-2">
+      <i class="fas fa-cog"></i>
+    </button>
+  </div>
+</div>
+
       <p class="text-gray-600">Monitoraggio in tempo reale dei veicoli che superano i limiti di velocità</p>
     </header>
     
@@ -249,6 +251,21 @@
         <canvas id="speed-chart"></canvas>
       </div>
     </div>
+    <!-- Grafico per tipo di veicolo -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+  <h2 class="text-xl font-semibold text-gray-800 mb-4">Distribuzione Tipi di Veicolo</h2>
+  <div class="chart-container">
+    <canvas id="vehicle-type-chart"></canvas>
+  </div>
+</div>
+<!-- Grafico per distribuzione oraria -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+  <h2 class="text-xl font-semibold text-gray-800 mb-4">Distribuzione Oraria Rilevazioni</h2>
+  <div class="chart-container">
+    <canvas id="hourly-distribution-chart"></canvas>
+  </div>
+</div>
+
     
     <!-- Filtri di ricerca -->
     <div class="bg-white rounded-lg shadow-md p-6 mb-6">
