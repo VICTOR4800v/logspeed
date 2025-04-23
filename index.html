@@ -1,14 +1,15 @@
 
 <!DOCTYPE html>
+
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistema di Rilevazione Velocità Roblox</title>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-  <link rel="icon" type="image/x-icon" href="favicon.png">
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sistema di Rilevazione Velocità Roblox</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
+<link href="favicon.png" rel="icon" type="image/x-icon"/>
+<style>
     .log-entry {
       transition: all 0.3s ease;
     }
@@ -63,359 +64,329 @@
     .dark-mode .log-entry:hover {
       background-color: #4b5563;
     }
-  </style>
+  
+#vehicle-type-chart { max-height: 250px; }
+</style>
 </head>
-
 <body class="bg-gray-100 min-h-screen">
-  <!-- Login Modal -->
-<div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-xl font-semibold text-gray-800">Accesso Sistema</h3>
-    </div>
-    
-    <div id="login-error" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"></div>
-    
-    <div class="space-y-4 mb-6">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1" for="username">Username</label>
-        <input type="text" id="username" class="w-full px-3 py-2 border rounded-md" placeholder="Inserisci username">
-      </div>
-      
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1" for="password">Password</label>
-        <input type="password" id="password" class="w-full px-3 py-2 border rounded-md" placeholder="Inserisci password">
-      </div>
-    </div>
-    
-    <div class="flex justify-end space-x-2">
-      <button id="login-button" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md">
+<!-- Login Modal -->
+<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" id="login-modal">
+<div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+<div class="flex justify-between items-center mb-4">
+<h3 class="text-xl font-semibold text-gray-800">Accesso Sistema</h3>
+</div>
+<div class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" id="login-error"></div>
+<div class="space-y-4 mb-6">
+<div>
+<label class="block text-sm font-medium text-gray-700 mb-1" for="username">Username</label>
+<input class="w-full px-3 py-2 border rounded-md" id="username" placeholder="Inserisci username" type="text"/>
+</div>
+<div>
+<label class="block text-sm font-medium text-gray-700 mb-1" for="password">Password</label>
+<input class="w-full px-3 py-2 border rounded-md" id="password" placeholder="Inserisci password" type="password"/>
+</div>
+</div>
+<div class="flex justify-end space-x-2">
+<button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md" id="login-button">
         Accedi
       </button>
-    </div>
-  </div>
 </div>
-
+</div>
+</div>
 <!-- Admin Actions Modal -->
-<div id="admin-actions-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-  <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-xl font-semibold text-gray-800">Pannello Amministratore</h3>
-      <button id="close-admin-modal" class="text-gray-500 hover:text-gray-700">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-    
-    <div class="space-y-4 mb-6">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Elimina Dati</label>
-        <div class="flex items-center gap-2">
-          <select id="delete-option" class="w-full px-3 py-2 border rounded-md">
-            <option value="all">Tutti i dati</option>
-            <option value="older-than-month">Dati più vecchi di un mese</option>
-            <option value="older-than-week">Dati più vecchi di una settimana</option>
-            <option value="by-date">Dati per data specifica</option>
-          </select>
-          <input type="date" id="delete-date" class="w-full px-3 py-2 border rounded-md hidden">
-        </div>
-      </div>
-      
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Backup Dati</label>
-        <button id="backup-data" class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md">
+<div class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50" id="admin-actions-modal">
+<div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+<div class="flex justify-between items-center mb-4">
+<h3 class="text-xl font-semibold text-gray-800">Pannello Amministratore</h3>
+<button class="text-gray-500 hover:text-gray-700" id="close-admin-modal">
+<i class="fas fa-times"></i>
+</button>
+</div>
+<div class="space-y-4 mb-6">
+<div>
+<label class="block text-sm font-medium text-gray-700 mb-1">Elimina Dati</label>
+<div class="flex items-center gap-2">
+<select class="w-full px-3 py-2 border rounded-md" id="delete-option">
+<option value="all">Tutti i dati</option>
+<option value="older-than-month">Dati più vecchi di un mese</option>
+<option value="older-than-week">Dati più vecchi di una settimana</option>
+<option value="by-date">Dati per data specifica</option>
+</select>
+<input class="w-full px-3 py-2 border rounded-md hidden" id="delete-date" type="date"/>
+</div>
+</div>
+<div>
+<label class="block text-sm font-medium text-gray-700 mb-1">Backup Dati</label>
+<button class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md" id="backup-data">
           Esporta Backup
         </button>
-      </div>
-      
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Gestione Utenti</label>
-        <button id="manage-users" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md">
+</div>
+<div>
+<label class="block text-sm font-medium text-gray-700 mb-1">Gestione Utenti</label>
+<button class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md" id="manage-users">
           Gestisci Utenti
         </button>
-      </div>
-    </div>
-    
-    <div class="border-t pt-4">
-      <button id="execute-admin-action" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md">
+</div>
+</div>
+<div class="border-t pt-4">
+<button class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md" id="execute-admin-action">
         Esegui Azione
       </button>
-    </div>
-  </div>
 </div>
-
+</div>
+</div>
 <!-- Manage Users Modal -->
-<div id="manage-users-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-  <div class="bg-white rounded-lg shadow-lg p-6 max-w-xl w-full">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-xl font-semibold text-gray-800">Gestione Utenti</h3>
-      <button id="close-users-modal" class="text-gray-500 hover:text-gray-700">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-    
-    <div class="space-y-4 mb-6">
-      <div>
-        <h4 class="font-medium text-gray-700 mb-2">Utenti Registrati</h4>
-        <div id="users-list" class="border rounded-md max-h-64 overflow-y-auto divide-y">
-          <!-- Gli utenti verranno inseriti qui -->
-        </div>
-      </div>
-      
-      <div class="border-t pt-4">
-        <h4 class="font-medium text-gray-700 mb-2">Aggiungi Nuovo Utente</h4>
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1" for="new-username">Username</label>
-            <input type="text" id="new-username" class="w-full px-3 py-2 border rounded-md">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1" for="new-password">Password</label>
-            <input type="password" id="new-password" class="w-full px-3 py-2 border rounded-md">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1" for="new-role">Ruolo</label>
-            <select id="new-role" class="w-full px-3 py-2 border rounded-md">
-              <option value="user">Utente Base</option>
-              <option value="admin">Amministratore</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="flex justify-between pt-4">
-      <button id="add-user" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md">
+<div class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50" id="manage-users-modal">
+<div class="bg-white rounded-lg shadow-lg p-6 max-w-xl w-full">
+<div class="flex justify-between items-center mb-4">
+<h3 class="text-xl font-semibold text-gray-800">Gestione Utenti</h3>
+<button class="text-gray-500 hover:text-gray-700" id="close-users-modal">
+<i class="fas fa-times"></i>
+</button>
+</div>
+<div class="space-y-4 mb-6">
+<div>
+<h4 class="font-medium text-gray-700 mb-2">Utenti Registrati</h4>
+<div class="border rounded-md max-h-64 overflow-y-auto divide-y" id="users-list">
+<!-- Gli utenti verranno inseriti qui -->
+</div>
+</div>
+<div class="border-t pt-4">
+<h4 class="font-medium text-gray-700 mb-2">Aggiungi Nuovo Utente</h4>
+<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+<div>
+<label class="block text-sm font-medium text-gray-700 mb-1" for="new-username">Username</label>
+<input class="w-full px-3 py-2 border rounded-md" id="new-username" type="text"/>
+</div>
+<div>
+<label class="block text-sm font-medium text-gray-700 mb-1" for="new-password">Password</label>
+<input class="w-full px-3 py-2 border rounded-md" id="new-password" type="password"/>
+</div>
+<div>
+<label class="block text-sm font-medium text-gray-700 mb-1" for="new-role">Ruolo</label>
+<select class="w-full px-3 py-2 border rounded-md" id="new-role">
+<option value="user">Utente Base</option>
+<option value="admin">Amministratore</option>
+</select>
+</div>
+</div>
+</div>
+</div>
+<div class="flex justify-between pt-4">
+<button class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md" id="add-user">
         Aggiungi Utente
       </button>
-      <button id="save-users" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md">
+<button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md" id="save-users">
         Salva Modifiche
       </button>
-    </div>
-  </div>
 </div>
-  <div class="container mx-auto px-4 py-8">
-    <header class="mb-6">
-      <div class="flex justify-between items-center">
-  <h1 class="text-3xl font-bold text-gray-800">Sistema di Rilevazione Velocità Roblox</h1>
-  <div class="header-buttons flex space-x-2">
-    <button id="dark-mode-toggle" class="bg-gray-800 text-white rounded-full p-2">
-      <i class="fas fa-moon"></i>
-    </button>
-    <button id="settings-button" class="bg-blue-500 text-white rounded-full p-2">
-      <i class="fas fa-cog"></i>
-    </button>
-  </div>
 </div>
-
-      <p class="text-gray-600">Monitoraggio in tempo reale dei veicoli che superano i limiti di velocità</p>
-    </header>
-    
-    <!-- Pannello di controllo -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-semibold text-gray-800">Pannello di Controllo</h2>
-        <div class="flex items-center space-x-4">
-          <div class="flex items-center space-x-2">
-            <span id="status-indicator" class="inline-block w-3 h-3 bg-gray-400 rounded-full"></span>
-            <span id="connection-status">Connessione in corso...</span>
-          </div>
-          <button id="refresh-button" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center">
-            <i class="fas fa-sync-alt mr-2"></i> Aggiorna
-          </button>
-        </div>
-      </div>
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-blue-50 p-4 rounded-lg">
-          <p class="text-blue-500 font-medium">Rilevazioni Totali</p>
-          <p id="total-detections" class="text-2xl font-bold">0</p>
-          <p class="text-sm text-gray-500">Numero totale di superamenti</p>
-        </div>
-        <div class="bg-red-50 p-4 rounded-lg">
-          <p class="text-red-500 font-medium">Velocità Massima</p>
-          <p id="highest-speed" class="text-2xl font-bold">0 km/h</p>
-          <p class="text-sm text-gray-500">Rilevazione più alta</p>
-        </div>
-        <div class="bg-green-50 p-4 rounded-lg">
-          <p class="text-green-500 font-medium">Eccesso Medio</p>
-          <p id="average-excess" class="text-2xl font-bold">0 km/h</p>
-          <p class="text-sm text-gray-500">Media degli eccessi</p>
-        </div>
-        <div class="bg-yellow-50 p-4 rounded-lg">
-          <p class="text-yellow-500 font-medium">Rilevazioni Oggi</p>
-          <p id="detections-today" class="text-2xl font-bold">0</p>
-          <p class="text-sm text-gray-500">Superamenti delle ultime 24h</p>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Grafico -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-      <h2 class="text-xl font-semibold text-gray-800 mb-4">Andamento Rilevazioni</h2>
-      <div class="chart-container">
-        <canvas id="speed-chart"></canvas>
-      </div>
-    </div>
-    <!-- Grafico per tipo di veicolo -->
+</div>
+<div class="container mx-auto px-4 py-8">
+<header class="mb-6">
+<div class="flex justify-between items-center">
+<h1 class="text-3xl font-bold text-gray-800">Sistema di Rilevazione Velocità Roblox</h1>
+<div class="header-buttons flex space-x-2">
+<button class="bg-gray-800 text-white rounded-full p-2" id="dark-mode-toggle">
+<i class="fas fa-moon"></i>
+</button>
+<button class="bg-blue-500 text-white rounded-full p-2" id="settings-button">
+<i class="fas fa-cog"></i>
+</button>
+</div>
+</div>
+<p class="text-gray-600">Monitoraggio in tempo reale dei veicoli che superano i limiti di velocità</p>
+</header>
+<!-- Pannello di controllo -->
 <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-  <h2 class="text-xl font-semibold text-gray-800 mb-4">Distribuzione Tipi di Veicolo</h2>
-  <div class="chart-container">
-    <canvas id="vehicle-type-chart"></canvas>
-  </div>
+<div class="flex justify-between items-center mb-4">
+<h2 class="text-xl font-semibold text-gray-800">Pannello di Controllo</h2>
+<div class="flex items-center space-x-4">
+<div class="flex items-center space-x-2">
+<span class="inline-block w-3 h-3 bg-gray-400 rounded-full" id="status-indicator"></span>
+<span id="connection-status">Connessione in corso...</span>
+</div>
+<button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center" id="refresh-button">
+<i class="fas fa-sync-alt mr-2"></i> Aggiorna
+          </button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="bg-blue-50 p-4 rounded-lg">
+<p class="text-blue-500 font-medium">Rilevazioni Totali</p>
+<p class="text-2xl font-bold" id="total-detections">0</p>
+<p class="text-sm text-gray-500">Numero totale di superamenti</p>
+</div>
+<div class="bg-red-50 p-4 rounded-lg">
+<p class="text-red-500 font-medium">Velocità Massima</p>
+<p class="text-2xl font-bold" id="highest-speed">0 km/h</p>
+<p class="text-sm text-gray-500">Rilevazione più alta</p>
+</div>
+<div class="bg-green-50 p-4 rounded-lg">
+<p class="text-green-500 font-medium">Eccesso Medio</p>
+<p class="text-2xl font-bold" id="average-excess">0 km/h</p>
+<p class="text-sm text-gray-500">Media degli eccessi</p>
+</div>
+<div class="bg-yellow-50 p-4 rounded-lg">
+<p class="text-yellow-500 font-medium">Rilevazioni Oggi</p>
+<p class="text-2xl font-bold" id="detections-today">0</p>
+<p class="text-sm text-gray-500">Superamenti delle ultime 24h</p>
+</div>
+</div>
+</div>
+<!-- Grafico -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+<h2 class="text-xl font-semibold text-gray-800 mb-4">Andamento Rilevazioni</h2>
+<div class="chart-container">
+<canvas id="speed-chart"></canvas>
+</div>
+</div>
+<!-- Grafico per tipo di veicolo -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+<h2 class="text-xl font-semibold text-gray-800 mb-4">Distribuzione Tipi di Veicolo</h2>
+<div class="chart-container">
+<canvas id="vehicle-type-chart"></canvas>
+</div>
 </div>
 <!-- Grafico per distribuzione oraria -->
 <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-  <h2 class="text-xl font-semibold text-gray-800 mb-4">Distribuzione Oraria Rilevazioni</h2>
-  <div class="chart-container">
-    <canvas id="hourly-distribution-chart"></canvas>
-  </div>
+<h2 class="text-xl font-semibold text-gray-800 mb-4">Distribuzione Oraria Rilevazioni</h2>
+<div class="chart-container">
+<canvas id="hourly-distribution-chart"></canvas>
 </div>
-
-    
-    <!-- Filtri di ricerca -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-      <h2 class="text-xl font-semibold text-gray-800 mb-4">Filtri di Ricerca</h2>
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        <div>
-          <label for="vehicle-filter" class="block text-sm font-medium text-gray-700 mb-1">Veicolo</label>
-          <input type="text" id="vehicle-filter" placeholder="Filtra per veicolo..." class="w-full px-3 py-2 border rounded-md">
-        </div>
-        <div>
-          <label for="min-speed" class="block text-sm font-medium text-gray-700 mb-1">Velocità Minima</label>
-          <input type="number" id="min-speed" placeholder="Km/h" class="w-full px-3 py-2 border rounded-md">
-        </div>
-        <div>
-          <label for="max-speed" class="block text-sm font-medium text-gray-700 mb-1">Velocità Massima</label>
-          <input type="number" id="max-speed" placeholder="Km/h" class="w-full px-3 py-2 border rounded-md">
-        </div>
-        <div>
-          <label for="date-filter" class="block text-sm font-medium text-gray-700 mb-1">Data</label>
-          <input type="date" id="date-filter" class="w-full px-3 py-2 border rounded-md">
-        </div>
-      </div>
-      
-      <div class="flex justify-end">
-        <button id="apply-filters" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md mr-2">
+</div>
+<!-- Filtri di ricerca -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+<h2 class="text-xl font-semibold text-gray-800 mb-4">Filtri di Ricerca</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+<div>
+<label class="block text-sm font-medium text-gray-700 mb-1" for="vehicle-filter">Veicolo</label>
+<input class="w-full px-3 py-2 border rounded-md" id="vehicle-filter" placeholder="Filtra per veicolo..." type="text"/>
+</div>
+<div>
+<label class="block text-sm font-medium text-gray-700 mb-1" for="min-speed">Velocità Minima</label>
+<input class="w-full px-3 py-2 border rounded-md" id="min-speed" placeholder="Km/h" type="number"/>
+</div>
+<div>
+<label class="block text-sm font-medium text-gray-700 mb-1" for="max-speed">Velocità Massima</label>
+<input class="w-full px-3 py-2 border rounded-md" id="max-speed" placeholder="Km/h" type="number"/>
+</div>
+<div>
+<label class="block text-sm font-medium text-gray-700 mb-1" for="date-filter">Data</label>
+<input class="w-full px-3 py-2 border rounded-md" id="date-filter" type="date"/>
+</div>
+</div>
+<div class="flex justify-end">
+<button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md mr-2" id="apply-filters">
           Applica Filtri
         </button>
-        <button id="reset-filters" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md">
+<button class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md" id="reset-filters">
           Reimposta
         </button>
-      </div>
-    </div>
-    
-    <!-- Tabella dei log -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-semibold text-gray-800">Log Rilevazioni</h2>
-        <div class="flex items-center space-x-2">
-          <span class="text-sm text-gray-500" id="filtered-count">Mostra tutti i risultati</span>
-          <select id="logs-per-page" class="border rounded-md px-2 py-1">
-            <option value="10">10 per pagina</option>
-            <option value="25">25 per pagina</option>
-            <option value="50">50 per pagina</option>
-            <option value="100">100 per pagina</option>
-          </select>
-          <button id="export-csv" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md flex items-center">
-            <i class="fas fa-download mr-1"></i> CSV
+</div>
+</div>
+<!-- Tabella dei log -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+<div class="flex justify-between items-center mb-4">
+<h2 class="text-xl font-semibold text-gray-800">Log Rilevazioni</h2>
+<div class="flex items-center space-x-2">
+<span class="text-sm text-gray-500" id="filtered-count">Mostra tutti i risultati</span>
+<select class="border rounded-md px-2 py-1" id="logs-per-page">
+<option value="10">10 per pagina</option>
+<option value="25">25 per pagina</option>
+<option value="50">50 per pagina</option>
+<option value="100">100 per pagina</option>
+</select>
+<button class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md flex items-center" id="export-csv">
+<i class="fas fa-download mr-1"></i> CSV
           </button>
-        </div>
-      </div>
-      
-      <div class="border rounded-lg overflow-hidden">
-        <div class="bg-gray-50 p-3 flex font-medium text-sm text-gray-700">
-          <div class="w-1/12">#</div>
-          <div class="w-1/6">Ora</div>
-          <div class="w-1/4">Veicolo</div>
-          <div class="w-1/6">Velocità</div>
-          <div class="w-1/6">Eccesso</div>
-          <div class="w-1/6">Data</div>
-          <div class="w-1/12">Azioni</div>
-        </div>
-        <div id="logs-container" class="divide-y overflow-auto" style="max-height: 500px; min-height: 300px;">
-          <!-- I log verranno inseriti qui -->
-          <div class="text-center text-gray-500 py-12">In attesa di rilevazioni...</div>
-        </div>
-      </div>
-      
-      <!-- Paginazione -->
-      <div class="flex justify-between items-center mt-4">
-        <span class="text-sm text-gray-500" id="showing-entries">Mostra 0-0 di 0 risultati</span>
-        <div class="flex space-x-1">
-          <button id="prev-page" class="px-3 py-1 border rounded-md disabled:opacity-50">
-            <i class="fas fa-chevron-left"></i>
-          </button>
-          <div id="pagination-numbers" class="flex space-x-1">
-            <!--             <!-- I numeri di pagina verranno inseriti qui -->
-          </div>
-          <button id="next-page" class="px-3 py-1 border rounded-md disabled:opacity-50">
-            <i class="fas fa-chevron-right"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Sezione Impostazioni (Modale) -->
-    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-xl font-semibold text-gray-800">Impostazioni</h3>
-          <button id="close-settings" class="text-gray-500 hover:text-gray-700">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Intervallo di Aggiornamento</label>
-            <select id="poll-interval" class="w-full px-3 py-2 border rounded-md">
-              <option value="1000">1 secondo</option>
-              <option value="3000" selected>3 secondi</option>
-              <option value="5000">5 secondi</option>
-              <option value="10000">10 secondi</option>
-              <option value="30000">30 secondi</option>
-            </select>
-          </div>
-          
-          <div>
-            <label class="flex items-center space-x-2">
-              <input type="checkbox" id="enable-sound" class="rounded">
-              <span class="text-sm font-medium text-gray-700">Attiva notifiche sonore</span>
-            </label>
-          </div>
-          
-          <div>
-            <label class="flex items-center space-x-2">
-              <input type="checkbox" id="auto-scroll" class="rounded" checked>
-              <span class="text-sm font-medium text-gray-700">Scorri automaticamente ai nuovi log</span>
-            </label>
-          </div>
-          
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Limite minimo di visualizzazione</label>
-            <div class="flex items-center space-x-2">
-              <input type="range" id="min-display-speed" min="0" max="200" value="80" class="w-full">
-              <span id="min-display-speed-value">80 km/h</span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="mt-6 flex justify-end space-x-2">
-          <button id="reset-settings" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md">
+</div>
+</div>
+<div class="border rounded-lg overflow-hidden">
+<div class="bg-gray-50 p-3 flex font-medium text-sm text-gray-700">
+<div class="w-1/12">#</div>
+<div class="w-1/6">Ora</div>
+<div class="w-1/4">Veicolo</div>
+<div class="w-1/6">Velocità</div>
+<div class="w-1/6">Eccesso</div>
+<div class="w-1/6">Data</div>
+<div class="w-1/12">Zona</div>
+</div>
+<div class="divide-y overflow-auto" id="logs-container" style="max-height: 500px; min-height: 300px;">
+<!-- I log verranno inseriti qui -->
+<div class="text-center text-gray-500 py-12">In attesa di rilevazioni...</div>
+</div>
+</div>
+<!-- Paginazione -->
+<div class="flex justify-between items-center mt-4">
+<span class="text-sm text-gray-500" id="showing-entries">Mostra 0-0 di 0 risultati</span>
+<div class="flex space-x-1">
+<button class="px-3 py-1 border rounded-md disabled:opacity-50" id="prev-page">
+<i class="fas fa-chevron-left"></i>
+</button>
+<div class="flex space-x-1" id="pagination-numbers">
+<!--             <!-- I numeri di pagina verranno inseriti qui -->
+</div>
+<button class="px-3 py-1 border rounded-md disabled:opacity-50" id="next-page">
+<i class="fas fa-chevron-right"></i>
+</button>
+</div>
+</div>
+</div>
+<!-- Sezione Impostazioni (Modale) -->
+<div class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50" id="settings-modal">
+<div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+<div class="flex justify-between items-center mb-4">
+<h3 class="text-xl font-semibold text-gray-800">Impostazioni</h3>
+<button class="text-gray-500 hover:text-gray-700" id="close-settings">
+<i class="fas fa-times"></i>
+</button>
+</div>
+<div class="space-y-4">
+<div>
+<label class="block text-sm font-medium text-gray-700 mb-1">Intervallo di Aggiornamento</label>
+<select class="w-full px-3 py-2 border rounded-md" id="poll-interval">
+<option value="1000">1 secondo</option>
+<option selected="" value="3000">3 secondi</option>
+<option value="5000">5 secondi</option>
+<option value="10000">10 secondi</option>
+<option value="30000">30 secondi</option>
+</select>
+</div>
+<div>
+<label class="flex items-center space-x-2">
+<input class="rounded" id="enable-sound" type="checkbox"/>
+<span class="text-sm font-medium text-gray-700">Attiva notifiche sonore</span>
+</label>
+</div>
+<div>
+<label class="flex items-center space-x-2">
+<input checked="" class="rounded" id="auto-scroll" type="checkbox"/>
+<span class="text-sm font-medium text-gray-700">Scorri automaticamente ai nuovi log</span>
+</label>
+</div>
+<div>
+<label class="block text-sm font-medium text-gray-700 mb-1">Limite minimo di visualizzazione</label>
+<div class="flex items-center space-x-2">
+<input class="w-full" id="min-display-speed" max="200" min="0" type="range" value="80"/>
+<span id="min-display-speed-value">80 km/h</span>
+</div>
+</div>
+</div>
+<div class="mt-6 flex justify-end space-x-2">
+<button class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md" id="reset-settings">
             Reimposta Default
           </button>
-          <button id="save-settings" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md">
+<button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md" id="save-settings">
             Salva Impostazioni
           </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Script -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
-  <script>
+</div>
+</div>
+</div>
+</div>
+<!-- Script -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
     // Configurazione
     const API_URL = '/.netlify/functions/api';
     let POLL_INTERVAL = 3000; // Predefinito: 3 secondi
@@ -1778,5 +1749,5 @@ Data e ora: ${new Date(log.timestamp).toLocaleString()}`);
       updateChart();
     });
   </script>
-</body>
+<section class="mt-6"><h2 class="text-2xl font-semibold mb-4">Statistiche Avanzate</h2><div class="bg-white rounded-lg shadow-md p-6 mb-6" id="advanced-stats"></div></section></body>
 </html>
