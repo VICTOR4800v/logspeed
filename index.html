@@ -65,7 +65,7 @@
     .dark-mode .log-entry:hover {
       background-color: #4b5563;
     }
-  
+  #vehicle-type-chart { max-height: 250px; }
 #hourly-distribution-chart { max-height: 250px !important; }
 </style>
 </head>
@@ -1210,43 +1210,7 @@ function createHourlyDistributionChart() {
   });
 }
 
-// Calcola e mostra statistiche avanzate
-function showAdvancedStats() {
-  // Trova l'ora di punta (quella con più rilevazioni)
-  const hourlyData = Array(24).fill(0);
-  logs.forEach(log => {
-    const hour = new Date(log.timestamp).getHours();
-    hourlyData[hour]++;
-  });
-  const peakHour = hourlyData.indexOf(Math.max(...hourlyData));
-  
-  // Calcola la deviazione standard delle velocità
-  const speeds = logs.map(log => log.speed);
-  const avg = speeds.reduce((sum, speed) => sum + speed, 0) / speeds.length;
-  const variance = speeds.reduce((sum, speed) => sum + Math.pow(speed - avg, 2), 0) / speeds.length;
-  const stdDev = Math.sqrt(variance).toFixed(2);
-  
-  // Mostra le statistiche
-  document.getElementById('advanced-stats').innerHTML = `
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <div class="p-4 bg-blue-50 rounded-lg shadow-sm">
-        <h3 class="font-semibold text-blue-800">Ora di punta</h3>
-        <p class="text-2xl font-bold">${peakHour}:00 - ${peakHour+1}:00</p>
-        <p class="text-sm text-gray-600">${hourlyData[peakHour]} rilevazioni</p>
-      </div>
-      <div class="p-4 bg-green-50 rounded-lg shadow-sm">
-        <h3 class="font-semibold text-green-800">Deviazione standard velocità</h3>
-        <p class="text-2xl font-bold">${stdDev} km/h</p>
-        <p class="text-sm text-gray-600">Indica la variabilità delle velocità</p>
-      </div>
-      <div class="p-4 bg-purple-50 rounded-lg shadow-sm">
-        <h3 class="font-semibold text-purple-800">Indice di rischio</h3>
-        <p class="text-2xl font-bold">${((statsData.totalExcess / statsData.totalDetections) * 10).toFixed(1)}/10</p>
-        <p class="text-sm text-gray-600">Basato sull'eccesso medio di velocità</p>
-      </div>
-    </div>
-  `;
-}
+
 
 // Aggiungi questa chiamata alla tua funzione di inizializzazione
 window.addEventListener('load', () => {
@@ -1257,7 +1221,6 @@ window.addEventListener('load', () => {
   // Aggiungi le nuove funzionalità
   createVehicleTypeChart();
   createHourlyDistributionChart();
-  showAdvancedStats();
 });
 
 // Aggiungi anche la chiamata quando aggiorni i log
@@ -1265,7 +1228,6 @@ function handleNewData() {
   // ... codice esistente ...
   createVehicleTypeChart();
   createHourlyDistributionChart();
-  showAdvancedStats();
 }
     // Aggiungi questa funzione
 function showSpeedLimitModal() {
