@@ -303,7 +303,7 @@
 <div class="w-1/6">Velocità</div>
 <div class="w-1/6">Eccesso</div>
 <div class="w-1/6">Data</div>
-<div class="w-1/12">Zona</div>
+<div class="w-1/12">Circuito</div>
 </div>
 <div class="divide-y overflow-auto" id="logs-container" style="max-height: 500px; min-height: 300px;">
 <!-- I log verranno inseriti qui -->
@@ -838,7 +838,7 @@ async function fetchLogs() {
         lastLogId = Math.max(...uniqueNewLogs.map(log => log.id));
         uniqueNewLogs.forEach(log => {
           log.isNew = true;
-          log.zona = log.zona || 'Circuito non identificato';
+          log.zone = log.zone || 'Circuito non identificato';
           statsData.totalDetections++;
           statsData.highestSpeed = Math.max(statsData.highestSpeed, log.speed);
           statsData.totalExcess += log.excess;
@@ -1080,7 +1080,7 @@ function createLogEntry(log, index) {
   logEntry.dataset.id = log.id;
   
   const time = new Date(log.timestamp);
-  const zona = log.zona || 'Circuito non identificato';
+  const zona = log.zone || 'Circuito non identificato';
   
   logEntry.innerHTML = `
     <div class="w-1/12">${index}</div>
@@ -1405,7 +1405,7 @@ document.querySelector('.header-buttons').appendChild(speedLimitButton);
           return false;
         }
         // Filtro zona
-        if (filterSettings.zona && (!log.zona || !log.zona.toLowerCase().includes(filterSettings.zona))) {
+        if (filterSettings.zona && (!log.zone || !log.zone.toLowerCase().includes(filterSettings.zona))) {
               return false;
         }
 
