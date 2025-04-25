@@ -95,52 +95,55 @@ exports.handler = async (event, context) => {
     // Inizializza Firebase
     const firestore = initializeFirebase();
     
-    if (event.httpMethod === "POST") {
-      const data = JSON.parse(event.body);
-      
-      if (!data.vehicleName || !data.speed || !data.excess) {
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ error: "Missing required fields" }),
-        };
-      }
-      
-      let logEntry;
-      
-      if (firestore) {
-        const newId = await getNextId(firestore);
-        logEntry = {
-          id: newId,
-          vehicleName: data.vehicleName,
-          speed: data.speed,
-          excess: data.excess,
-          timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        };
-        
-        await firestore.collection("detections").add(logEntry);
-        await cleanupOldRecords(firestore);
-      } else {
-        logEntry = {
-          id: nextId++,
-          vehicleName: data.vehicleName,
-          speed: data.speed,
-          excess: data.excess,
-          timestamp: new Date().toISOString(),
-        };
-        logs.push(logEntry);
-        if (logs.length > 500) {
-          logs = logs.slice(-500);
-        }
-      }
-      
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({ success: true, id: logEntry.id }),
-      };
-    }
+    // Nella parte del POST handler, modifica la funzione che riceve i dati per includere il campo 'zone'
+if (event.httpMethod === "POST") {
+  const data = JSON.parse(event.body);
+  
+  // Modifica questa validazione per includere il nuovo campo opzionale
+  if (!data.vehicleName || !data.speed || !data.excess) {
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({ error: "Missing required fields" }),
+    };
+  }
+  
+  let logEntry;
+  
+  if (firestore) {
+    const newId = await getNextId(firestore);
+    logEntry = {
+      id: newId,
+      vehicleName: data.vehicleName,
+      speed: data.speed,
+      excess: data.excess,
+      zone: data.zone || "Non specificata", // Aggiungi il campo zone con valore di default
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    };
     
+    await firestore.collection("detections").add(logEntry);
+    await cleanupOldRecords(firestore);
+  } else {
+    logEntry = {
+      id: nextId++,
+      vehicleName: data.vehicleName,
+      speed: data.speed,
+      excess: data.excess,
+      zone: data.zone || "Non specificata", // Aggiungi il campo zone con valore di default
+      timestamp: new Date().toISOString(),
+    };
+    logs.push(logEntry);
+    if (logs.length > 500) {
+      logs = logs.slice(-500);
+    }
+  }
+  
+  return {
+    statusCode: 200,
+    headers,
+    body: JSON.stringify({ success: true, id: logEntry.id }),
+  };
+}
     if (event.httpMethod === "GET") {
       const since = parseInt(event.queryStringParameters?.since || 0, 10);
       let newLogs = [];
