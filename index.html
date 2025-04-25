@@ -221,11 +221,6 @@
 <p class="text-2xl font-bold" id="detections-today">0</p>
 <p class="text-sm text-gray-500">Superamenti delle ultime 24h</p>
 </div>
-
-<div>
-<label class="block text-sm font-medium text-gray-700 mb-1" for="zone-filter">Zona</label>
-<input class="w-full px-3 py-2 border rounded-md" id="zone-filter" placeholder="Inserisci zona..." type="text"/>
-</div>
 </div>
 </div>
 <!-- Grafico -->
@@ -268,6 +263,10 @@
 <div>
 <label class="block text-sm font-medium text-gray-700 mb-1" for="date-filter">Data</label>
 <input class="w-full px-3 py-2 border rounded-md" id="date-filter" type="date"/>
+</div>
+<div>
+  <label class="block text-sm font-medium text-gray-700 mb-1" for="zone-filter">Zona</label>
+  <input class="w-full px-3 py-2 border rounded-md" id="zone-filter" placeholder="Es. Zona 1" type="text"/>
 </div>
 </div>
 <div class="flex justify-end">
@@ -975,6 +974,7 @@ const vehicleFilter = document.getElementById('vehicle-filter');
 const minSpeedFilter = document.getElementById('min-speed');
 const maxSpeedFilter = document.getElementById('max-speed');
 const dateFilter = document.getElementById('date-filter');
+const zoneFilter = document.getElementById('zone-filter');
 const applyFiltersBtn = document.getElementById('apply-filters');
 const resetFiltersBtn = document.getElementById('reset-filters');
 
@@ -1381,6 +1381,8 @@ document.querySelector('.header-buttons').appendChild(speedLimitButton);
       filterSettings.minSpeed = parseInt(minSpeedFilter.value) || '';
       filterSettings.maxSpeed = parseInt(maxSpeedFilter.value) || '';
       filterSettings.date = dateFilter.value;
+    filterSettings.zona = document.getElementById('zone-filter').value.toLowerCase();
+
       
       filteredLogs = logs.filter(log => {
         // Filtro veicolo
@@ -1402,7 +1404,11 @@ document.querySelector('.header-buttons').appendChild(speedLimitButton);
         if (filterSettings.date && formatDate(new Date(log.timestamp)) !== filterSettings.date) {
           return false;
         }
-        
+        // Filtro zona
+        if (filterSettings.zona && (!log.zona || !log.zona.toLowerCase().includes(filterSettings.zona))) {
+              return false;
+        }
+
         return true;
       });
       
@@ -1416,6 +1422,7 @@ document.querySelector('.header-buttons').appendChild(speedLimitButton);
       minSpeedFilter.value = '';
       maxSpeedFilter.value = '';
       dateFilter.value = '';
+      zoneFilter.value = '';
       
       filterSettings.vehicle = '';
       filterSettings.minSpeed = '';
