@@ -68,6 +68,10 @@
     .dark-mode .log-entry:hover {
       background-color: #4b5563;
     }
+    body {
+ background-color: #f0f0f0;
+}
+
   #vehicle-type-chart { max-height: 250px; }
 #hourly-distribution-chart { max-height: 250px !important; }
 </style>
@@ -132,11 +136,6 @@
         </button>
 </div>
 
-<div>
-<label class="block text-sm font-medium text-gray-700 mb-1">Nuovo Limite Velocità (km/h)</label>
-<input class="w-full px-3 py-2 border rounded-md" id="global-speed-limit" max="150" min="20" placeholder="Es. 80" type="number"/>
-<button class="mt-2 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md w-full" id="save-global-limit">Salva Nuovo Limite</button>
-</div>
 </div>
 <div class="border-t pt-4">
 <button class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md" id="execute-admin-action">
@@ -1359,21 +1358,8 @@ function showSpeedLimitModal() {
   document.getElementById('speed-limit-modal').classList.remove('hidden');
 }
 
-// Aggiungi un pulsante nella navbar o in un'altra posizione appropriata
-const speedLimitButton = document.createElement('button');
-speedLimitButton.className = 'ml-2 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-md text-sm';
-speedLimitButton.innerHTML = '<i class="fas fa-tachometer-alt mr-1"></i> Limite velocità';
-speedLimitButton.addEventListener('click', showSpeedLimitModal);
 
-// Aggiungi il pulsante nella barra di navigazione
-document.querySelector('.header-buttons').appendChild(speedLimitButton);
-    // Funzione per riprodurre il suono di notifica
-    function playNotificationSound() {
-      if (appSettings.enableSound) {
-        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLHPM+N2QUBUQSqDo0LGFYzAPRIHRso5nNw4hJ2mVvcHUp4FTGQkoSoTHybDEonxFBAkmPXfE3trQrIZFAwAGDzFFcLTl7tivfUEpBTI3V57i/97BeGMdBRoVMXLO//7Tm5JtKBUSKljFvenXvaeCNg0PHDRwp+b15bWbbRwMCjlp0/Hp3salmE4TCR1JgL7MvLGokGg0DBpMjKifc2l2qcDa6/DZ0auZkWlRODFAfLf1/v7juKaYcVInKVya4+rm6NLGmndILThccsHP093Z3N7OtoFNMzRUc6fO1N/t8evs6cWkdVE0PF6Lp8PMzOLx9OzHk3lXMjFPcJqxuLW9ydfo8r5uSC0yWH2dsK6urrrP3NuDYjskK1GHora3uMPFzNfEaDwcIk6In621ur7EytHJaiYUHkyFpby+wcLH0MWZTxkSHkqBoLK2uL/FyLxwPhwaKFOHo7u9wMTRwYxVJhkdL1qLpLa5wcjVu4BLHjRKXn+bp6qtvMt');
-        audio.play();
-      }
-    }
+
     
     // Filtra i log in base ai criteri specificati
     function applyFilters() {
