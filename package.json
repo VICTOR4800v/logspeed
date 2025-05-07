@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Sistema di rilevazione della velocità per Roblox",
   "dependencies": {
-    "mongodb": "^4.13.0",
     "firebase-admin": "^11.10.1"
   }
 }
