@@ -7,6 +7,24 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
+    <script>
+  async function caricaDati() {
+    const res = await fetch('/api/getData');
+    const dati = await res.json();
+
+    const container = document.getElementById("listaDati");
+    container.innerHTML = '';
+
+    dati.forEach(d => {
+      const riga = document.createElement("div");
+      riga.textContent = `Veicolo: ${d.vehicleName} | Velocità: ${d.speed} km/h | Eccesso: ${d.excess} | Zona: ${d.zone}`;
+      container.appendChild(riga);
+    });
+  }
+
+  window.onload = caricaDati;
+</script>
+
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -281,6 +299,7 @@
     </style>
 </head>
 <body>
+    <div id="listaDati">Caricamento dati...</div>
     <div class="container">
         <header>
             <h1>Dashboard Monitoraggio Dati</h1>
