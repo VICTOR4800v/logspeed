@@ -821,51 +821,6 @@ window.addEventListener('load', () => {
 });
 
 // Modificare la funzione fetchLogs
-async function fetchLogs() {
-  try {
-    statusIndicator.className = 'inline-block w-3 h-3 bg-yellow-400 rounded-full';
-    connectionStatus.textContent = 'Recupero dati...';
-
-    const url = lastLogId ? `${API_URL}?since=${lastLogId}` : API_URL;
-    const response = await fetch(url);
-
-    if (!response.ok) throw new Error('Errore di rete');
-
-    const newLogs = await response.json();
-
-    if (newLogs.length > 0) {
-      // Filtra i log duplicati basandosi su ID
-      const existingIds = new Set(logs.map(log => log.id));
-      const uniqueNewLogs = newLogs.filter(log => !existingIds.has(log.id));
-      
-      if (uniqueNewLogs.length > 0) {
-        lastLogId = Math.max(...uniqueNewLogs.map(log => log.id));
-        uniqueNewLogs.forEach(log => {
-          log.isNew = true;
-          log.zone = log.zone || 'Circuito non identificato';
-          statsData.totalDetections++;
-          statsData.highestSpeed = Math.max(statsData.highestSpeed, log.speed);
-          statsData.totalExcess += log.excess;
-          if (isToday(log.timestamp)) statsData.detectionsToday++;
-          const time = new Date(log.timestamp);
-          speedData.labels.push(formatTime(time));
-          speedData.speeds.push(log.speed);
-          if (speedData.labels.length > 20) {
-            speedData.labels.shift();
-            speedData.speeds.shift();
-          }
-          playNotificationSound();
-        });
-
-        logs = [...uniqueNewLogs, ...logs];
-        // Ordina i log per data più recente
-        logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        saveLogsToStorage();
-        applyFilters();
-        updateChart();
-        updateStats();
-      }
-    }
 
     statusIndicator.className = 'inline-block w-3 h-3 bg-green-400 rounded-full';
     connectionStatus.textContent = 'Connesso';
@@ -999,7 +954,34 @@ const refreshButton = document.getElementById('refresh-button');
 const exportCsvBtn = document.getElementById('export-csv');
 const logsPerPageSelect = document.getElementById('logs-per-page');
 const darkModeToggle = document.getElementById('dark-mode-toggle');
+// Aggiungere all'inizio del file dopo il DOMContentLoaded
+async function verifyApiConnection() {
+  const statusElement = document.getElementById('status-indicator') || 
+                       document.getElementById('connection-status-indicator');
+  const statusTextElement = document.getElementById('connection-status');
+  
+  try {
+    const apiUrl = 'https://irfradmin.netlify.app/.netlify/functions/api?type=ping';
+    const response = await fetch(apiUrl, { method: 'OPTIONS' });
+    
+    if (response.ok || response.status === 204) {
+      console.log('API connessa correttamente');
+      if (statusElement) statusElement.className = 'inline-block w-3 h-3 bg-green-500 rounded-full';
+      if (statusTextElement) statusTextElement.textContent = 'API connessa';
+      return true;
+    } else {
+      throw new Error(`API ha risposto con stato ${response.status}`);
+    }
+  } catch (error) {
+    console.error('Errore di connessione all\'API:', error);
+    if (statusElement) statusElement.className = 'inline-block w-3 h-3 bg-red-500 rounded-full';
+    if (statusTextElement) statusTextElement.textContent = 'API non raggiungibile';
+    return false;
+  }
+}
 
+// Chiamare questa funzione all'avvio
+verifyApiConnection();
 // Funzioni di utilità
 function formatTime(date) {
   return date.toTimeString().split(' ')[0];
