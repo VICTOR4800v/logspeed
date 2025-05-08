@@ -10,24 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 
-    <script>
-  async function caricaDati() {
-    const res = await fetch('/api/getData');
-    const dati = await res.json();
-
-    const container = document.getElementById("listaDati");
-    container.innerHTML = '';
-
-    dati.forEach(d => {
-      const riga = document.createElement("div");
-      riga.textContent = `Veicolo: ${d.vehicleName} | Velocità: ${d.speed} km/h | Eccesso: ${d.excess} | Zona: ${d.zone}`;
-      container.appendChild(riga);
-    });
-  }
-
-  window.onload = caricaDati;
-        
-</script>
+ 
 
     <style>
         :root {
