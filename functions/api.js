@@ -124,7 +124,25 @@ async function handleSpeedDetection(data, firestore) {
     id: logEntry.id
   };
 }
-
+function ensureBackwardCompatibility(data) {
+  // Per rilevazioni di velocità
+  if (data.type === "speed") {
+    // Assicura che tutti i campi necessari siano presenti
+    data.zone = data.zone || "Non specificata";
+  }
+  
+  // Per cambi gomme
+  if (data.type === "tyre") {
+    // Gestisci sia 'box' che 'zone' per retrocompatibilità
+    if (!data.box && data.zone) {
+      data.box = data.zone;
+    } else if (!data.zone && data.box) {
+      data.zone = data.box;
+    }
+  }
+  
+  return data;
+}
 // Gestione dei cambi gomme
 async function handleTyreChange(data, firestore) {
   // Valida i dati richiesti per i cambi gomme
@@ -313,6 +331,7 @@ function ensureLegacyCompatibility(data) {
         }
       }
         newLogs = newLogs.map(ensureLegacyCompatibility);
+      newLogs = newLogs.map(ensureBackwardCompatibility)
       return {
         statusCode: 200,
         headers,
