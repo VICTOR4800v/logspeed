@@ -1586,73 +1586,61 @@ function toggleDarkMode() {
 
     // Fetch dei log
     async function fetchLogs() {
-      try {
-        statusIndicator.className = 'inline-block w-3 h-3 bg-yellow-400 rounded-full';
-        connectionStatus.textContent = 'Recupero dati...';
-        const url = lastLogId ? `${API_URL}?since=${lastLogId}` : `${API_URL}`;
-const response = await fetch(url);
+  try {
+    statusIndicator.className = 'inline-block w-3 h-3 bg-yellow-400 rounded-full';
+    connectionStatus.textContent = 'Recupero dati...';
 
-        if (!response.ok) throw new Error('Errore di rete');
-        
-        const newLogs = await response.json();
-        
-        if (newLogs.length > 0) {
-          // Aggiorna l'ultimo ID log
-          lastLogId = Math.max(...newLogs.map(log => log.id));
-          
-          // Marca i nuovi log
-          newLogs.forEach(log => {
-            log.isNew = true;
-            
-            // Aggiorna le statistiche
-            statsData.totalDetections++;
-            statsData.highestSpeed = Math.max(statsData.highestSpeed, log.speed);
-            statsData.totalExcess += log.excess;
-            
-            if (isToday(log.timestamp)) {
-              statsData.detectionsToday++;
-            }
-            
-            // Aggiorna i dati del grafico
-            const time = new Date(log.timestamp);
-            speedData.labels.push(formatTime(time));
-            speedData.speeds.push(log.speed);
-            
-            // Limita i dati del grafico a 20 punti
-            if (speedData.labels.length > 20) {
-              speedData.labels.shift();
-              speedData.speeds.shift();
-            }
-            
-            // Riproduce il suono di notifica
-            playNotificationSound();
-          });
-          
-          // Aggiungi i nuovi log all'inizio dell'array
-          logs = [...newLogs, ...logs];
-          
-          // Riapplica i filtri
-          applyFilters();
-          
-          // Aggiorna il grafico
-          updateChart();
-          
-          // Aggiorna le statistiche
-          updateStats();
-        }
-        
-        statusIndicator.className = 'inline-block w-3 h-3 bg-green-400 rounded-full';
-        connectionStatus.textContent = 'Connesso';
-      } catch (error) {
-        console.error('Errore nel recupero dei log:', error);
-        statusIndicator.className = 'inline-block w-3 h-3 bg-red-500 rounded-full';
-        connectionStatus.textContent = 'Errore di connessione';
-      }
+    // Correzione 1: Usa l'URL completo e specifica esplicitamente type=speed
+    const url = lastLogId 
+      ? `https://irfradmin.netlify.app/.netlify/functions/api?since=${lastLogId}&type=speed` 
+      : `https://irfradmin.netlify.app/.netlify/functions/api?type=speed`;
       
-      // Richiedi nuovamente dopo l'intervallo
-      setTimeout(fetchLogs, POLL_INTERVAL);
+    const response = await fetch(url);
+
+    if (!response.ok) throw new Error('Errore di rete');
+
+    const newLogs = await response.json();
+
+    if (newLogs.length > 0) {
+      // Il resto della funzione può rimanere invariato
+      // perché gestisce già correttamente i campi necessari
+      const existingIds = new Set(logs.map(log => log.id));
+      const uniqueNewLogs = newLogs.filter(log => !existingIds.has(log.id));
+      
+      if (uniqueNewLogs.length > 0) {
+        lastLogId = Math.max(...uniqueNewLogs.map(log => log.id));
+        uniqueNewLogs.forEach(log => {
+          log.isNew = true;
+          log.zone = log.zone || 'Circuito non identificato';
+          statsData.totalDetections++;
+          statsData.highestSpeed = Math.max(statsData.highestSpeed, log.speed);
+          statsData.totalExcess += log.excess;
+          if (isToday(log.timestamp)) statsData.detectionsToday++;
+          const time = new Date(log.timestamp);
+          speedData.labels.push(formatTime(time));
+          speedData.speeds.push(log.speed);
+          if (speedData.labels.length > 20) {
+            speedData.labels.shift();
+            speedData.speeds.shift();
+          }
+          playNotificationSound();
+        });
+
+        logs = [...uniqueNewLogs, ...logs];
+        // Ordina i log per data più recente
+        logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        saveLogsToStorage();
+        applyFilters();
+        updateChart();
+        updateStats();
+      }
     }
-    
+  } catch (error) {
+    console.error('Errore nel recupero dei log:', error);
+    statusIndicator.className = 'inline-block w-3 h-3 bg-red-500 rounded-full';
+    connectionStatus.textContent = 'Errore di connessione';
+  }
+}
     // Event listeners
     applyFiltersBtn.addEventListener('click', applyFilters);
     resetFiltersBtn.addEventListener('click', resetFilters);
