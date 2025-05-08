@@ -821,17 +821,6 @@ window.addEventListener('load', () => {
 });
 
 // Modificare la funzione fetchLogs
-    try {
-    statusIndicator.className = 'inline-block w-3 h-3 bg-green-400 rounded-full';
-    connectionStatus.textContent = 'Connesso';
-    } catch (error) {
-    console.error('Errore nel recupero dei log:', error);
-    statusIndicator.className = 'inline-block w-3 h-3 bg-red-500 rounded-full';
-    connectionStatus.textContent = 'Errore di connessione';
-  }
-
-  setTimeout(fetchLogs, POLL_INTERVAL);
-}
 
 // Event listeners per il sistema di login
 document.getElementById('login-button').addEventListener('click', () => {
@@ -1634,13 +1623,17 @@ function toggleDarkMode() {
         updateChart();
         updateStats();
       }
+         statusIndicator.className = 'inline-block w-3 h-3 bg-green-400 rounded-full';
+        connectionStatus.textContent = 'Connesso';
+      } catch (error) {
+        console.error('Errore nel recupero dei log:', error);
+        statusIndicator.className = 'inline-block w-3 h-3 bg-red-500 rounded-full';
+        connectionStatus.textContent = 'Errore di connessione';
+      }
+        // Richiedi nuovamente dopo l'intervallo
+      setTimeout(fetchLogs, POLL_INTERVAL);
     }
-  } catch (error) {
-    console.error('Errore nel recupero dei log:', error);
-    statusIndicator.className = 'inline-block w-3 h-3 bg-red-500 rounded-full';
-    connectionStatus.textContent = 'Errore di connessione';
-  }
-}
+
     // Event listeners
     applyFiltersBtn.addEventListener('click', applyFilters);
     resetFiltersBtn.addEventListener('click', resetFilters);
