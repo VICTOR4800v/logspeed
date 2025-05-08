@@ -26,17 +26,13 @@ function initializeFirebase() {
 }
 
 // In-memory fallback
-let logs = []; // Manteniamo la collezione originale per compatibilità
-let speedLogs = [];
-let tyreLogs = [];
+let logs = [];
 let nextId = 1;
-let nextSpeedId = 1;
-let nextTyreId = 1;
 
-// Funzione per ottenere il prossimo ID per una collezione specifica
-async function getNextId(db, collection) {
+// Funzione per ottenere il prossimo ID
+async function getNextId(db) {
   try {
-    const snapshot = await db.collection(collection)
+    const snapshot = await db.collection("detections")
       .orderBy("id", "desc")
       .limit(1)
       .get();
@@ -47,15 +43,15 @@ async function getNextId(db, collection) {
       return snapshot.docs[0].data().id + 1;
     }
   } catch (error) {
-    console.error(`Error getting next ID for ${collection}:`, error);
-    return collection === "speed_detections" ? nextSpeedId++ : nextTyreId++;
+    console.error("Error getting next ID:", error);
+    return nextId++;
   }
 }
 
-// Pulizia dati vecchi (mantiene ultimi 500 record per ogni collezione)
-async function cleanupOldRecords(db, collection) {
+// Pulizia dati vecchi (mantiene ultimi 500 record)
+async function cleanupOldRecords(db) {
   try {
-    const collectionRef = db.collection(collection);
+    const collectionRef = db.collection("detections");
     const countSnapshot = await collectionRef.count().get();
     const count = countSnapshot.data().count;
     
@@ -72,116 +68,11 @@ async function cleanupOldRecords(db, collection) {
       });
       
       await batch.commit();
-      console.log(`Deleted ${oldRecords.size} old records from ${collection}`);
+      console.log(`Deleted ${oldRecords.size} old records`);
     }
   } catch (error) {
-    console.error(`Cleanup error for ${collection}:`, error);
+    console.error("Cleanup error:", error);
   }
-}
-
-// Gestione delle rilevazioni di velocità
-async function handleSpeedDetection(data, firestore) {
-  // Valida i dati richiesti per le rilevazioni di velocità
-  if (!data.vehicleName || data.speed === undefined || data.excess === undefined) {
-    return {
-      success: false,
-      error: "Missing required fields for speed detection"
-    };
-  }
-  
-  let logEntry;
-  
-  if (firestore) {
-    const newId = await getNextId(firestore, "detections");
-    logEntry = {
-      id: newId,
-      vehicleName: data.vehicleName,
-      speed: data.speed,
-      excess: data.excess,
-      zone: data.zone || "Non specificata",
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      type: "speed"
-    };
-    
-    // Salva sia nella collezione originale che in quella nuova per compatibilità
-    await firestore.collection("detections").add(logEntry);
-    // Opzionalmente, salva anche nella collezione specifica
-    await firestore.collection("speed_detections").add(logEntry);
-    await cleanupOldRecords(firestore, "detections");
-  } else {
-    logEntry = {
-      id: nextSpeedId++,
-      vehicleName: data.vehicleName,
-      speed: data.speed,
-      excess: data.excess,
-      zone: data.zone || "Non specificata",
-      timestamp: new Date().toISOString(),
-      type: "speed"
-    };
-    speedLogs.push(logEntry);
-    logs.push(logEntry); // Aggiungi anche ai logs generici per compatibilità
-    if (speedLogs.length > 500) {
-      speedLogs = speedLogs.slice(-500);
-    }
-  }
-  
-  return {
-    success: true,
-    id: logEntry.id
-  };
-}
-
-// Gestione dei cambi gomme
-async function handleTyreChange(data, firestore) {
-  // Valida i dati richiesti per i cambi gomme
-  if (!data.vehicleName || !data.tyreType) {
-    return {
-      success: false,
-      error: "Missing required fields for tyre change"
-    };
-  }
-  
-  let logEntry;
-  
-  if (firestore) {
-    const newId = await getNextId(firestore, "detections");
-    logEntry = {
-      id: newId,
-      vehicleName: data.vehicleName,
-      tyreType: data.tyreType,
-      zone: data.zone, // Manteniamo zone per compatibilità con collezione originale
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      type: "tyre"
-    };
-    
-    // Salva nella collezione originale per compatibilità
-    await firestore.collection("detections").add(logEntry);
-    // Opzionalmente, salva anche nella collezione specifica
-    await firestore.collection("tyre_changes").add({
-      ...logEntry,
-      box: data.zone // Qui possiamo usare box per chiarezza
-    });
-    await cleanupOldRecords(firestore, "detections");
-  } else {
-    logEntry = {
-      id: nextTyreId++,
-      vehicleName: data.vehicleName,
-      tyreType: data.tyreType,
-      zone: data.zone, // Manteniamo zone per compatibilità
-      timestamp: new Date().toISOString(),
-      type: "tyre"
-    };
-    tyreLogs.push(logEntry);
-    logs.push(logEntry); // Aggiungi anche ai logs generici per compatibilità
-    if (tyreLogs.length > 500) {
-      tyreLogs = tyreLogs.slice(-500);
-    }
-  }
-  
-  return {
-    success: true,
-    id: logEntry.id
-  };
 }
 
 exports.handler = async (event, context) => {
@@ -204,61 +95,65 @@ exports.handler = async (event, context) => {
     // Inizializza Firebase
     const firestore = initializeFirebase();
     
-    if (event.httpMethod === "POST") {
-      const data = JSON.parse(event.body);
-      let result;
-      
-      // Determina il tipo di richiesta in base ai campi presenti nei dati
-      if (data.speed !== undefined && data.excess !== undefined) {
-        // È una rilevazione di velocità dal primo script
-        result = await handleSpeedDetection(data, firestore);
-      } else if (data.tyreType !== undefined) {
-        // È un cambio gomme dal secondo script
-        result = await handleTyreChange(data, firestore);
-      } else {
-        // Nessuno dei due tipi riconosciuti
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ 
-            error: "Invalid data format - couldn't determine request type" 
-          }),
-        };
-      }
-      
-      if (result.success) {
-        return {
-          statusCode: 200,
-          headers,
-          body: JSON.stringify({ success: true, id: result.id }),
-        };
-      } else {
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ error: result.error }),
-        };
-      }
-    }
+    // Nella parte del POST handler, modifica la funzione che riceve i dati per includere il campo 'zone'
+if (event.httpMethod === "POST") {
+  const data = JSON.parse(event.body);
+  
+  // Modifica questa validazione per includere il nuovo campo opzionale
+  if (!data.vehicleName || !data.speed || !data.excess) {
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({ error: "Missing required fields" }),
+    };
+  }
+  
+  let logEntry;
+  
+  if (firestore) {
+    const newId = await getNextId(firestore);
+    logEntry = {
+      id: newId,
+      vehicleName: data.vehicleName,
+      speed: data.speed,
+      excess: data.excess,
+      zone: data.zone || "Non specificata", // Aggiungi il campo zone con valore di default
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    };
     
+    await firestore.collection("detections").add(logEntry);
+    await cleanupOldRecords(firestore);
+  } else {
+    logEntry = {
+      id: nextId++,
+      vehicleName: data.vehicleName,
+      speed: data.speed,
+      excess: data.excess,
+      zone: data.zone || "Non specificata", // Aggiungi il campo zone con valore di default
+      timestamp: new Date().toISOString(),
+    };
+    logs.push(logEntry);
+    if (logs.length > 500) {
+      logs = logs.slice(-500);
+    }
+  }
+  
+  return {
+    statusCode: 200,
+    headers,
+    body: JSON.stringify({ success: true, id: logEntry.id }),
+  };
+}
     if (event.httpMethod === "GET") {
       const since = parseInt(event.queryStringParameters?.since || 0, 10);
-      const type = event.queryStringParameters?.type; // speed, tyre, o undefined (entrambi)
       let newLogs = [];
       
       if (firestore) {
-        // Per compatibilità, usa sempre la collezione originale "detections"
-        let query = firestore.collection("detections")
+        const snapshot = await firestore.collection("detections")
           .where("id", ">", since)
           .orderBy("id", "asc")
-          .limit(100);
-        
-        // Aggiungi filtro per tipo se specificato
-        if (type === "speed" || type === "tyre") {
-          query = query.where("type", "==", type);
-        }
-        
-        const snapshot = await query.get();
+          .limit(100)
+          .get();
         
         newLogs = snapshot.docs.map(doc => {
           const data = doc.data();
@@ -269,23 +164,7 @@ exports.handler = async (event, context) => {
           return data;
         });
       } else {
-        // Versione in-memory - usa la collezione originale logs
         newLogs = logs.filter(log => log.id > since);
-        
-        // Filtra per tipo se specificato
-        if (type === "speed") {
-          newLogs = newLogs.filter(log => log.type === "speed");
-        } else if (type === "tyre") {
-          newLogs = newLogs.filter(log => log.type === "tyre");
-        }
-        
-        // Ordina per id
-        newLogs.sort((a, b) => a.id - b.id);
-        
-        // Limita a 100 risultati
-        if (newLogs.length > 100) {
-          newLogs = newLogs.slice(0, 100);
-        }
       }
       
       return {
