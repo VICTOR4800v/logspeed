@@ -1582,7 +1582,7 @@ function toggleDarkMode() {
     // Correzione 1: Usa l'URL completo e specifica esplicitamente type=speed
     const url = lastLogId 
       ? `https://irfradmin.netlify.app/.netlify/functions/api?since=${lastLogId}&type=speed` 
-      : `https://irfradmin.netlify.app/.netlify/functions/api?type=speed`;
+      : `${API_URL}?type=speed`;
       
     const response = await fetch(url);
 
