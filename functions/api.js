@@ -26,8 +26,10 @@ function initializeFirebase() {
 }
 
 // In-memory fallback
+let logs = []; // Manteniamo la collezione originale per compatibilità
 let speedLogs = [];
 let tyreLogs = [];
+let nextId = 1;
 let nextSpeedId = 1;
 let nextTyreId = 1;
 
@@ -90,7 +92,7 @@ async function handleSpeedDetection(data, firestore) {
   let logEntry;
   
   if (firestore) {
-    const newId = await getNextId(firestore, "speed_detections");
+    const newId = await getNextId(firestore, "detections");
     logEntry = {
       id: newId,
       vehicleName: data.vehicleName,
@@ -101,8 +103,11 @@ async function handleSpeedDetection(data, firestore) {
       type: "speed"
     };
     
+    // Salva sia nella collezione originale che in quella nuova per compatibilità
+    await firestore.collection("detections").add(logEntry);
+    // Opzionalmente, salva anche nella collezione specifica
     await firestore.collection("speed_detections").add(logEntry);
-    await cleanupOldRecords(firestore, "speed_detections");
+    await cleanupOldRecords(firestore, "detections");
   } else {
     logEntry = {
       id: nextSpeedId++,
@@ -114,6 +119,7 @@ async function handleSpeedDetection(data, firestore) {
       type: "speed"
     };
     speedLogs.push(logEntry);
+    logs.push(logEntry); // Aggiungi anche ai logs generici per compatibilità
     if (speedLogs.length > 500) {
       speedLogs = speedLogs.slice(-500);
     }
@@ -138,28 +144,35 @@ async function handleTyreChange(data, firestore) {
   let logEntry;
   
   if (firestore) {
-    const newId = await getNextId(firestore, "tyre_changes");
+    const newId = await getNextId(firestore, "detections");
     logEntry = {
       id: newId,
       vehicleName: data.vehicleName,
       tyreType: data.tyreType,
-      box: data.zone, // Manteniamo zone ma concettualmente è un box
+      zone: data.zone, // Manteniamo zone per compatibilità con collezione originale
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
       type: "tyre"
     };
     
-    await firestore.collection("tyre_changes").add(logEntry);
-    await cleanupOldRecords(firestore, "tyre_changes");
+    // Salva nella collezione originale per compatibilità
+    await firestore.collection("detections").add(logEntry);
+    // Opzionalmente, salva anche nella collezione specifica
+    await firestore.collection("tyre_changes").add({
+      ...logEntry,
+      box: data.zone // Qui possiamo usare box per chiarezza
+    });
+    await cleanupOldRecords(firestore, "detections");
   } else {
     logEntry = {
       id: nextTyreId++,
       vehicleName: data.vehicleName,
       tyreType: data.tyreType,
-      box: data.zone,
+      zone: data.zone, // Manteniamo zone per compatibilità
       timestamp: new Date().toISOString(),
       type: "tyre"
     };
     tyreLogs.push(logEntry);
+    logs.push(logEntry); // Aggiungi anche ai logs generici per compatibilità
     if (tyreLogs.length > 500) {
       tyreLogs = tyreLogs.slice(-500);
     }
@@ -234,65 +247,44 @@ exports.handler = async (event, context) => {
       let newLogs = [];
       
       if (firestore) {
-        // Recupera dati in base al tipo richiesto
-        if (!type || type === "speed") {
-          const speedSnapshot = await firestore.collection("speed_detections")
-            .where("id", ">", since)
-            .orderBy("id", "asc")
-            .limit(100)
-            .get();
-          
-          const speedData = speedSnapshot.docs.map(doc => {
-            const data = doc.data();
-            // Converte Timestamp in ISO string per compatibilità
-            if (data.timestamp && typeof data.timestamp.toDate === 'function') {
-              data.timestamp = data.timestamp.toDate().toISOString();
-            }
-            return data;
-          });
-          
-          newLogs = [...newLogs, ...speedData];
+        // Per compatibilità, usa sempre la collezione originale "detections"
+        let query = firestore.collection("detections")
+          .where("id", ">", since)
+          .orderBy("id", "asc")
+          .limit(100);
+        
+        // Aggiungi filtro per tipo se specificato
+        if (type === "speed" || type === "tyre") {
+          query = query.where("type", "==", type);
         }
         
-        if (!type || type === "tyre") {
-          const tyreSnapshot = await firestore.collection("tyre_changes")
-            .where("id", ">", since)
-            .orderBy("id", "asc")
-            .limit(100)
-            .get();
-          
-          const tyreData = tyreSnapshot.docs.map(doc => {
-            const data = doc.data();
-            // Converte Timestamp in ISO string per compatibilità
-            if (data.timestamp && typeof data.timestamp.toDate === 'function') {
-              data.timestamp = data.timestamp.toDate().toISOString();
-            }
-            return data;
-          });
-          
-          newLogs = [...newLogs, ...tyreData];
-        }
+        const snapshot = await query.get();
         
-        // Ordina tutti i log per timestamp se ci sono entrambi i tipi
-        if (!type) {
-          newLogs.sort((a, b) => {
-            return new Date(a.timestamp) - new Date(b.timestamp);
-          });
-        }
+        newLogs = snapshot.docs.map(doc => {
+          const data = doc.data();
+          // Converte Timestamp in ISO string per compatibilità
+          if (data.timestamp && typeof data.timestamp.toDate === 'function') {
+            data.timestamp = data.timestamp.toDate().toISOString();
+          }
+          return data;
+        });
       } else {
-        // Versione in-memory
-        if (!type || type === "speed") {
-          newLogs = [...newLogs, ...speedLogs.filter(log => log.id > since)];
-        }
-        if (!type || type === "tyre") {
-          newLogs = [...newLogs, ...tyreLogs.filter(log => log.id > since)];
+        // Versione in-memory - usa la collezione originale logs
+        newLogs = logs.filter(log => log.id > since);
+        
+        // Filtra per tipo se specificato
+        if (type === "speed") {
+          newLogs = newLogs.filter(log => log.type === "speed");
+        } else if (type === "tyre") {
+          newLogs = newLogs.filter(log => log.type === "tyre");
         }
         
-        // Ordina per timestamp se ci sono entrambi i tipi
-        if (!type) {
-          newLogs.sort((a, b) => {
-            return new Date(a.timestamp) - new Date(b.timestamp);
-          });
+        // Ordina per id
+        newLogs.sort((a, b) => a.id - b.id);
+        
+        // Limita a 100 risultati
+        if (newLogs.length > 100) {
+          newLogs = newLogs.slice(0, 100);
         }
       }
       
