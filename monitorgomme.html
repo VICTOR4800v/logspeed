@@ -257,18 +257,26 @@
             color: white;
         }
 
-        .gomma-hard {
-            background-color: #e74c3c;
-        }
+       .gomma-hard {
+    background-color: #555; /* scuro grigio */
+}
 
-        .gomma-medium {
-            background-color: #f39c12;
-        }
+.gomma-medium {
+    background-color: #bfa100; /* giallo scuro */
+}
 
-        .gomma-soft {
-            background-color: #2ecc71;
-        }
-        
+.gomma-soft {
+    background-color: #a00000; /* rosso scuro */
+}
+
+.gomma-int {
+    background-color: #006400; /* verde scuro */
+}
+
+.gomma-wet {
+    background-color: #0033cc; /* blu scuro */
+}
+
         #real-time-updates {
             position: fixed;
             bottom: 20px;
@@ -280,6 +288,42 @@
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
             z-index: 100;
             display: none;
+        }
+        body.dark-mode button {
+    background-color: #555;
+    color: #fff;
+    border: 1px solid #777;
+}
+
+body.dark-mode button:hover {
+    background-color: #777;
+}
+
+            body.dark-mode {
+            background-color: #1e1e1e;
+            color: #f5f5f5;
+        }
+        
+        body.dark-mode .box,
+        body.dark-mode .metric-card,
+        body.dark-mode table,
+        body.dark-mode thead {
+            background-color: #2c2c2c;
+            color: #f5f5f5;
+        }
+        
+        body.dark-mode th,
+        body.dark-mode td {
+            border-color: #444;
+        }
+        
+        body.dark-mode button {
+            background-color: #444;
+            color: white;
+        }
+        
+        body.dark-mode .box-title {
+            color: #f5f5f5;
         }
 
         @media (max-width: 992px) {
@@ -644,63 +688,26 @@ async function loadRealData() {
         }
         
         function updateBoxTrendChart() {
-            const timeRange = document.getElementById('chart-time-range').value;
-            
-            // Filtra i dati in base all'intervallo di tempo
-            let chartData = [...filteredData];
-            const now = new Date();
-            
-            if (timeRange === 'day') {
-                const yesterday = new Date(now);
-                yesterday.setDate(yesterday.getDate() - 1);
-                chartData = chartData.filter(item => new Date(item.timestamp) >= yesterday);
-            } else if (timeRange === 'week') {
-                const lastWeek = new Date(now);
-                lastWeek.setDate(lastWeek.getDate() - 7);
-                chartData = chartData.filter(item => new Date(item.timestamp) >= lastWeek);
-            } else if (timeRange === 'month') {
-                const lastMonth = new Date(now);
-                lastMonth.setMonth(lastMonth.getMonth() - 1);
-                chartData = chartData.filter(item => new Date(item.timestamp) >= lastMonth);
-            } else if (timeRange === 'year') {
-                const lastYear = new Date(now);
-                lastYear.setFullYear(lastYear.getFullYear() - 1);
-                chartData = chartData.filter(item => new Date(item.timestamp) >= lastYear);
-            }
-            
-            // Raggruppa i dati per giocatore
-            const playerGroups = _.groupBy(chartData, 'car');
-            const datasets = [];
-            
-            // Crea un dataset per ogni giocatore
-            const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c'];
-            let colorIndex = 0;
-            
-            for (const player in playerGroups) {
-                // Ordina i dati per timestamp
-                const playerData = playerGroups[player].sort((a, b) => 
-                    new Date(a.timestamp) - new Date(b.timestamp));
-                
-                datasets.push({
-                    label: player,
-                    data: playerData.map(item => ({
-                        x: new Date(item.timestamp),
-                        y: item.box
-                    })),
-                    borderColor: colors[colorIndex % colors.length],
-                    backgroundColor: colors[colorIndex % colors.length] + '20',
-                    tension: 0.4,
-                    fill: false
-                });
-                
-                colorIndex++;
-            }
-            
-            // Aggiorna il grafico
-            boxTrendChart.data.datasets = datasets;
-            boxTrendChart.options.scales.x.time.unit = timeRange === 'day' ? 'hour' : 'day';
-            boxTrendChart.update();
-        }
+    const groupedByDate = _.groupBy(filteredData, item => 
+        new Date(item.timestamp).toISOString().split('T')[0]
+    );
+
+    const labels = Object.keys(groupedByDate).sort();
+    const data = labels.map(date => groupedByDate[date].length);
+
+    boxTrendChart.data = {
+        labels,
+        datasets: [{
+            label: "Pit al Giorno",
+            data,
+            backgroundColor: '#3498db'
+        }]
+    };
+
+    boxTrendChart.config.type = 'bar';
+    boxTrendChart.update();
+}
+
         
         function updateTirePieChart() {
             const viewType = document.getElementById('pie-chart-view').value;
@@ -708,12 +715,14 @@ async function loadRealData() {
             // Raggruppa i dati per tipo di gomma
             const tireGroups = _.groupBy(filteredData, 'gomma');
             const labels = Object.keys(tireGroups).map(key => key.charAt(0).toUpperCase() + key.slice(1));
-            const backgroundColors = {
-                'hard': '#e74c3c',
-                'medium': '#f39c12',
-                'soft': '#2ecc71'
-            };
-            
+           const backgroundColors = {
+    'hard': '#555',
+    'medium': '#bfa100',
+    'soft': '#a00000',
+    'int': '#006400',
+    'wet': '#0033cc'
+};
+
             let data;
             
             if (viewType === 'count') {
