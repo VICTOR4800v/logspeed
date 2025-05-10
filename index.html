@@ -808,7 +808,7 @@ function exportBackup() {
 window.addEventListener('load', () => {
   loadSettings();
   initAuth();
-  loadLogsFromStorage();
+ // loadLogsFromStorage();
   
   // Interval per il salvataggio automatico dei dati
   setInterval(saveLogsToStorage, 60000); // Salva ogni minuto
@@ -1615,10 +1615,10 @@ function toggleDarkMode() {
           }
         });
 
-        logs = [...uniqueNewLogs, ...logs];
-        // Ordina i log per data più recente
-        logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        saveLogsToStorage();
+        logs = [...uniqueNewLogs]; // ✅ sovrascrive tutto
+filteredLogs = [...logs]; // ✅ aggiorna i dati filtrati
+logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+saveLogsToStorage();
         applyFilters();
         updateChart();
         updateStats();
@@ -1715,6 +1715,7 @@ Data e ora: ${new Date(log.timestamp).toLocaleString()}`);
     
     // Inizializzazione
     window.addEventListener('load', () => {
+      localStorage.removeItem('speedSystemLogs');
       loadSettings();
       fetchLogs();
       filteredLogs = [...logs];
