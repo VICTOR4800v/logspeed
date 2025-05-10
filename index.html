@@ -1715,7 +1715,6 @@ Data e ora: ${new Date(log.timestamp).toLocaleString()}`);
     
     // Inizializzazione
     window.addEventListener('load', () => {
-      localStorage.removeItem('speedSystemLogs');
       loadSettings();
       fetchLogs();
       filteredLogs = [...logs];
