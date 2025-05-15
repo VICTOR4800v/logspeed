@@ -518,13 +518,18 @@ async function loadRealData() {
         const data = await response.json();
         
         // Correzione 2: Assicurati che la mappatura dei dati consideri i nuovi campi
-        mockData = data.map(item => ({
-            id: item.id,
-            timestamp: item.timestamp,
-            car: item.vehicleName,
-            box: item.box || item.zone, // Supporta entrambi i campi per retrocompatibilità
-            gomma: item.tyreType
-        }));
+       mockData = data
+  .filter(item => item.timestamp)  // <-- scarta i dati senza timestamp
+  .map(item => ({
+    id: item.id,
+    timestamp: item.timestamp,
+    car: item.vehicleName,
+    box: item.box || item.zone,
+    gomma: item.tyreType
+  }));
+console.log("Dati ricevuti dalla API:", mockData.length);
+console.log("Esempio dati:", mockData[0]);
+
         initFilters();
         filteredData = [...mockData];
         updateDashboard();
@@ -653,6 +658,7 @@ async function loadRealData() {
         }
         
         function updateDashboard() {
+            
             updateMetrics();
             updateBoxTrendChart();
             updateTirePieChart();
