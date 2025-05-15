@@ -541,26 +541,29 @@ console.log("Esempio dati:", mockData[0]);
         function initFilters() {
             const playerFilter = document.getElementById('player-filter');
             const tireFilter = document.getElementById('tire-filter');
-             // ⚠️ Pulisci prima i filtri
+               // ⚠️ Pulisci prima i filtri
     playerFilter.innerHTML = '<option value="all">Tutti i giocatori</option>';
     tireFilter.innerHTML = '<option value="all">Tutte le gomme</option>';
-            // Ottieni tutti i giocatori unici
-            const uniquePlayers = [...new Set(mockData.map(item => item.car))];
-            uniquePlayers.forEach(player => {
-                const option = document.createElement('option');
-                option.value = player;
-                option.textContent = player;
-                playerFilter.appendChild(option);
-            });
-            
-            // Ottieni tutti i tipi di gomme unici
-            const uniqueTires = [...new Set(mockData.map(item => item.gomma))];
-            uniqueTires.forEach(tire => {
-                const option = document.createElement('option');
-                option.value = tire;
-                option.textContent = tire.charAt(0).toUpperCase() + tire.slice(1);
-                tireFilter.appendChild(option);
-            });
+
+    // ✅ Usa Set per avere voci uniche
+    const giocatoriUnici = [...new Set(mockData.map(item => item.car))];
+    const gommeUniche = [...new Set(mockData.map(item => item.gomma))];
+
+    // Aggiungi opzioni uniche per i giocatori
+    giocatoriUnici.forEach(player => {
+        const option = document.createElement('option');
+        option.value = player;
+        option.textContent = player;
+        playerFilter.appendChild(option);
+    });
+
+    // Aggiungi opzioni uniche per le gomme
+    gommeUniche.forEach(tire => {
+        const option = document.createElement('option');
+        option.value = tire;
+        option.textContent = tire.charAt(0).toUpperCase() + tire.slice(1);
+        tireFilter.appendChild(option);
+    });
         }
         
         function initDatePickers() {
