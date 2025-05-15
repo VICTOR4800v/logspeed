@@ -541,7 +541,9 @@ console.log("Esempio dati:", mockData[0]);
         function initFilters() {
             const playerFilter = document.getElementById('player-filter');
             const tireFilter = document.getElementById('tire-filter');
-            
+             // ⚠️ Pulisci prima i filtri
+    playerFilter.innerHTML = '<option value="all">Tutti i giocatori</option>';
+    tireFilter.innerHTML = '<option value="all">Tutte le gomme</option>';
             // Ottieni tutti i giocatori unici
             const uniquePlayers = [...new Set(mockData.map(item => item.car))];
             uniquePlayers.forEach(player => {
