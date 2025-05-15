@@ -274,7 +274,7 @@ function ensureLegacyCompatibility(data) {
           const speedSnapshot = await firestore.collection("speed_detections")
             .where("id", ">", since)
             .orderBy("id", "asc")
-            .limit(100)
+            .limit(1000)
             .get();
           
           const speedData = speedSnapshot.docs.map(doc => {
