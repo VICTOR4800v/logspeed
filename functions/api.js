@@ -293,7 +293,7 @@ function ensureLegacyCompatibility(data) {
           const tyreSnapshot = await firestore.collection("tyre_changes")
             .where("id", ">", since)
             .orderBy("id", "asc")
-            .limit(100)
+            .limit(1000)
             .get();
           
           const tyreData = tyreSnapshot.docs.map(doc => {
